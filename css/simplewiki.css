@@ -1,0 +1,8 @@
+
+form fieldset { border: none; }
+
+form .Actions { margin-top: 10px; }
+
+/* Specific styles to fix treedropdownfield */
+#TreeDropdownField_Form_CreatePageForm_CreateContext { width: 350px; }
+#TreeDropdownField_Form_CreatePageForm_CreateContext .items { width: 324px; }

@@ -1,0 +1,15 @@
+
+Version 0.1.0 RC1
+2009-11-26
+
+Initial release of simplewiki module
+
+* Edit wiki pages on the frontend of the site using any of the following editors
+** TinyMCE wysiwyg (including link and image selection)
+** MarkItUp
+** Plain text entry
+* Basic wiki markup supported
+* Use wiki style tags to create new subpages eg [[New Page Name]]
+* Choice of edit -> save and auto publish or edit -> save draft -> explicitly publish
+* Page locking to prevent multiple people editing the same content
+* Creating of new pages from the frontend
