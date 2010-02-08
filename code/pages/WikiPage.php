@@ -40,6 +40,7 @@ class WikiPage extends Page
 		'EditorType' => "Enum('Inherit,HTML,Wiki,Plain', 'Inherit')",
 		// Who was the last editor of the page?
 		'LastEditor' => 'Varchar(64)',
+		'LockExpiry' => 'SS_Datetime',
 	);
 		
 	/**
@@ -102,6 +103,13 @@ class WikiPage extends Page
 			$replacement = '<a href="[sitetree_link id='.$page->ID.']">'.$pageTitle.'</a>';
 			$this->Content = str_replace('[['.$pageTitle.']]', $replacement, $this->Content);
 		}
+
+		// set a lock expiry in the past if there's not one already set
+		if (!$this->LockExpiry) {
+			$this->LockExpiry = date('Y-m-d H:i:s');
+		}
+
+		// Make sure to set the last editor to the current user
 		if (Member::currentUser()) {
 			$this->LastEditor = Member::currentUser()->Email;
 		}
@@ -210,6 +218,15 @@ class WikiPage extends Page
 
 class WikiPage_Controller extends Page_Controller
 {
+	/**
+	 * lock pages for 5 minutes at a time by default
+	 *
+	 * This value is in seconds
+	 *
+	 * @var int
+	 */
+	public static $lock_time = 15;
+	
 	static $allowed_actions = array(
 		'linkselector',
 		'edit',
@@ -224,6 +241,7 @@ class WikiPage_Controller extends Page_Controller
 		'CreatePageForm',
 		'delete',
 		'addpage',
+		'updatelock',
 	);
 
 	public function init()
@@ -255,7 +273,7 @@ class WikiPage_Controller extends Page_Controller
 
 		$existing = $this->getEditingLocks($this->owner, true);
 		// oops, we've somehow got here even though we shouldn't have
-		if (count($existing)) {
+		if ($existing && $existing['user'] != Member::currentUser()->Email) {
 			Director::redirect($this->owner->Link());
 			return;
 		}
@@ -297,7 +315,8 @@ class WikiPage_Controller extends Page_Controller
 
 		$fields = new FieldSet(
 			$editorField,
-			new LiteralField('AjaxPing', '<script type="text/javascript">setInterval(function () { new Ajax.Request("admin/pageStatus?ID='.$this->owner->ID.'") }, 60000)</script>')
+			new HiddenField('LockUpdate', '', $this->owner->Link('updatelock')),
+			new HiddenField('LockLength', '', self::$lock_time - 10)
 		);
 
 		$actions = null;
@@ -454,7 +473,7 @@ class WikiPage_Controller extends Page_Controller
 
 		$existing = $this->getEditingLocks($this->owner, true);
 		// oops, we've somehow got here even though we shouldn't have
-		if (count($existing)) {
+		if ($existing && $existing['user'] != Member::currentUser()->Email) {
 			return "Someone somehow locked it while you were gone, this shouldn't happen like this :(";
 		}
 
@@ -554,9 +573,9 @@ class WikiPage_Controller extends Page_Controller
 	{
 		$existing = $this->getEditingLocks($this->owner);
 
-		if (count($existing)) {
+		if ($existing && $existing['user'] != Member::currentUser()->Email) {
 			$fields = new FieldSet(
-				new ReadonlyField('ExistingEditor', '', _t('WikiPage.EXISTINGEDITOR', 'This page is currently locked for editing by '.implode(',', $existing)))
+				new ReadonlyField('ExistingEditor', '', _t('WikiPage.EXISTINGEDITOR', 'This page is currently locked for editing by '.$existing['user']. ' until ' . $existing['expires']))
 			);
 			$actions = new FieldSet();
 		} else {
@@ -567,6 +586,26 @@ class WikiPage_Controller extends Page_Controller
 		}
 
 		return new Form($this, 'StatusForm', $fields, $actions);
+	}
+
+	/**
+	 * Updates the lock timeout for the given object
+	 * 
+	 * @param <type> $data
+	 */
+	public function updatelock($data)
+	{
+		if ($this->owner->ID && $this->owner->canEdit()) {
+			$lock = $this->getEditingLocks($this->owner, true);
+			$response = new stdClass();
+			$response->status = 1;
+			if ($lock != null && $lock['user'] != Member::currentUser()->Email) {
+				// someone else has stolen it !
+				$response->status = 0;
+				$response->message = _t('WikiPage.LOCK_STOLEN', "Another user (".$lock['user'].") has forcefully taken this lock");
+			}
+			return Convert::raw2json($response);
+		}
 	}
 	
 	/**
@@ -581,20 +620,46 @@ class WikiPage_Controller extends Page_Controller
 	 */
 	protected function getEditingLocks($page, $doLock=false)
 	{
-		$latest = Versioned::get_latest_version('WikiPage', $page->ID);
-		
-		// see what the status of our page is. If it's not "Published", and
-		// we're not the most recent editor, then we can't edit it
-		$currentEmail = Member::currentUser() ? Member::currentUser()->Email : '__public_user'; 
-		if ($latest && $latest->Status != 'Published' && $latest->LastEditor != $currentEmail) {
-			return array($latest->LastEditor);
+		$currentStage = Versioned::current_stage();
+
+		Versioned::reading_stage('Stage');
+
+		$filter = array(
+			'WikiPage.ID =' => $page->ID,
+			'LockExpiry > ' => date('Y-m-d H:i:s'),
+		);
+
+		$filter = db_quote($filter);
+
+		$user = Member::currentUser();
+		$currentLock = DataObject::get_one('WikiPage', $filter);
+
+		$lock = null;
+
+		if ($currentLock && $currentLock->ID) {
+			// if there's a current lock in place, lets return that value
+			$lock = array(
+				'user' => $currentLock->LastEditor,
+				'expires' => $currentLock->LockExpiry,
+			);
 		}
 
-		if ($doLock) {
-			// otherwise, lets save it with us as the editor
+		// If we're trying to take the lock, make sure that a) there's no existing
+		// lock or b) we currently hold the lock
+		if ($doLock && ($currentLock == null || !$currentLock->ID || $currentLock->LastEditor == $user->Email)) {
+			// set the updated lock expiry based on now + lock timeout
+			$page->LastEditor = $user->Email;
+			$page->LockExpiry = date('Y-m-d H:i:s', time() + self::$lock_time);
+
+			// save it with us as the editor
 			$this->savePage($page);
 		}
+
+		Versioned::reading_stage($currentStage);
+
+		return $lock;
 	}
+
 
 	/**
 	 * Called to start editing this page
