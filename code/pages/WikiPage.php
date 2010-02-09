@@ -42,6 +42,16 @@ class WikiPage extends Page
 		'LastEditor' => 'Varchar(64)',
 		'LockExpiry' => 'SS_Datetime',
 	);
+	
+	/**
+	 * lock pages for 1 minute at a time by default
+	 *
+	 * This value is in seconds
+	 *
+	 * @var int
+	 */
+	public static $lock_time = 60;
+
 		
 	/**
 	 * Set this to true in your mysite/_config.php file to force publishing
@@ -113,6 +123,23 @@ class WikiPage extends Page
 		if (Member::currentUser()) {
 			$this->LastEditor = Member::currentUser()->Email;
 		}
+	}
+
+	/**
+	 * Returns whether or not the current user can edit this page
+	 *
+	 * If the
+	 */
+	public function canEdit($member=null)
+	{
+		$can = parent::canEdit($member);
+
+		if (!$can) {
+			// see if they can via the wiki permission explicitly
+			$can = Permission::check(EDIT_WIKI);
+		}
+
+		return $can;
 	}
 
 	/**
@@ -214,18 +241,32 @@ class WikiPage extends Page
 		}
 		return $current;
 	}
+
+	/**
+	 * Lock the page for the current user
+	 *
+	 * @param Member $member
+	 *			The user to lock the page for
+	 */
+	public function lock($member = null)
+	{
+		if (!$member) {
+			$member = Member::currentUser();
+		}
+
+		// set the updated lock expiry based on now + lock timeout
+		$this->LastEditor = $member->Email;
+		$this->LockExpiry = date('Y-m-d H:i:s', time() + WikiPage::$lock_time);
+
+		// save it with us as the editor
+		$this->write();
+	}
 }
 
-class WikiPage_Controller extends Page_Controller
+
+class WikiPage_Controller extends Page_Controller implements PermissionProvider
 {
-	/**
-	 * lock pages for 5 minutes at a time by default
-	 *
-	 * This value is in seconds
-	 *
-	 * @var int
-	 */
-	public static $lock_time = 15;
+
 	
 	static $allowed_actions = array(
 		'linkselector',
@@ -253,6 +294,29 @@ class WikiPage_Controller extends Page_Controller
 	}
 
 	/**
+	 * Define some permissions used for editing wiki pages
+	 *
+	 * @return array
+	 */
+	public function providePermissions()
+	{
+		return array(
+			EDIT_WIKI => array (
+				'name' =>  _t('WikiPage.PERM_EDIT', 'Edit Wiki Pages'),
+				'category' => _t('WikiPage.WIKI_CATEGORY', 'Wiki'),
+				'sort' => -100,
+				'help' => _t('WikiPage.PERM_EDIT_HELP', 'Allows users to edit wiki pages')
+			),
+			MANAGE_WIKI_PAGES => array (
+				'name' =>   _t('WikiPage.MANAGE_PAGES', 'Manage Wiki pages'),
+				'category' => _t('WikiPage.WIKI_CATEGORY', 'Wiki'),
+				'sort' => -100,
+				'help' => _t('WikiPage.CREATE_PAGES_HELP', 'Display controls that allow users to create and delete aribtrary pages from the Wiki editing UI')
+			),
+		);
+	}
+
+	/**
 	 * The form we're editing with
 	 * 
 	 * @var Form
@@ -277,7 +341,7 @@ class WikiPage_Controller extends Page_Controller
 			Director::redirect($this->owner->Link());
 			return;
 		}
-		
+
 		if(!$this->owner->canEdit()) {
 			return Security::permissionFailure($this);
 		}
@@ -316,7 +380,7 @@ class WikiPage_Controller extends Page_Controller
 		$fields = new FieldSet(
 			$editorField,
 			new HiddenField('LockUpdate', '', $this->owner->Link('updatelock')),
-			new HiddenField('LockLength', '', self::$lock_time - 10)
+			new HiddenField('LockLength', '', WikiPage::$lock_time - 10)
 		);
 
 		$actions = null;
@@ -333,8 +397,10 @@ class WikiPage_Controller extends Page_Controller
 			);
 		}
 
-		$actions->push(new FormAction('addpage_t', _t('WikiPage.ADD_PAGE', 'New Page')));
-		$actions->push(new FormAction('delete', _t('WikiPage.DELETE_PAGE', 'Delete Page')));
+		if (Permission::check(MANAGE_WIKI_PAGES)) {
+			$actions->push(new FormAction('addpage_t', _t('WikiPage.ADD_PAGE', 'New Page')));
+			$actions->push(new FormAction('delete', _t('WikiPage.DELETE_PAGE', 'Delete Page')));
+		}
 
 		return new Form($this, "EditForm", $fields, $actions);
 	}
@@ -401,6 +467,10 @@ class WikiPage_Controller extends Page_Controller
 	 */
 	public function addpage($args)
 	{
+		if (!Permission::check(MANAGE_WIKI_PAGES)) {
+			return Security::permissionFailure($this);
+		}
+
 		$pageName = trim($args['NewPageName']);
 		$createType = $args['CreateType'] ? $args['CreateType'] : 'child';
 		if (!strlen($pageName)) {
@@ -557,7 +627,11 @@ class WikiPage_Controller extends Page_Controller
 				$this->form = $this->StatusForm();
 			}
 		} else {
-			$append = $this->CreatePageForm()->forTemplate();
+			// if we have got an editing form, then we'll add a New Page
+			// form if we have permissions to do so
+			if (Permission::check(MANAGE_WIKI_PAGES)) {
+				$append = $this->CreatePageForm()->forTemplate();
+			}
 		}
 
 		return $this->form->forTemplate() . $append;
@@ -647,12 +721,7 @@ class WikiPage_Controller extends Page_Controller
 		// If we're trying to take the lock, make sure that a) there's no existing
 		// lock or b) we currently hold the lock
 		if ($doLock && ($currentLock == null || !$currentLock->ID || $currentLock->LastEditor == $user->Email)) {
-			// set the updated lock expiry based on now + lock timeout
-			$page->LastEditor = $user->Email;
-			$page->LockExpiry = date('Y-m-d H:i:s', time() + self::$lock_time);
-
-			// save it with us as the editor
-			$this->savePage($page);
+			$page->lock();
 		}
 
 		Versioned::reading_stage($currentStage);
@@ -710,7 +779,9 @@ class WikiPage_Controller extends Page_Controller
 	}
 	
 	/**
-	 * Retrieves information about a selected image
+	 * Retrieves information about a selected image for the frontend
+	 * image insertion tool - hacky for now, ideally need to pull through the
+	 * backend ImageForm
 	 * 
 	 * @return string
 	 */

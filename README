@@ -55,6 +55,8 @@ There are 2 configuration variables to be aware of
   created pages are only available in the 'Stage' view of the site too, even
   though the published content might refer to them. By default, pages are
   automatically published as per normal wiki behaviour. 
+* WikiPage::$lock_time = 60; How many seconds pages should be locked for at any
+  time.
 
 Troubleshooting
 -----------------------------------------------

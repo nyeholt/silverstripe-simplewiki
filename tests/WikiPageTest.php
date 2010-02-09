@@ -61,6 +61,26 @@ class WikiPageTest extends SapphireTest
 
 		$this->assertEquals('Wiki', $root->Title);
 	}
+
+	function testLockTimeout()
+	{
+		$page = $this->objFromFixture('WikiPage', 'wiki2');
+
+		$page->Content = 'page content [[with a mix]] of good urls';
+		// save and make sure there's a page with the title 'with a mix'
+		$page->write();
+
+		// now lock the page, we expect the 'lockExpiry' to be in the future
+		$now = time();
+		$page->lock();
+		$expiry = strtotime($page->LockExpiry);
+
+		// the lock should be at least minDiff in the future
+		$minDiff = WikiPage::$lock_time - 5;
+
+		$this->assertTrue($expiry - $now > $minDiff);
+
+	}
 }
 
 

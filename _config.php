@@ -7,6 +7,13 @@ Director::addRules(100, array(
 HtmlEditorConfig::get('default')->enablePlugins('sslinks');
 HtmlEditorConfig::get('default')->insertButtonsBefore('advcode', 'ss_simplelink', 'unlink', 'ss_simpleimage');
 
+// PERMISSION CONSTANTS
+// To use these permissions, you MUST grant your wiki editor group the ability
+// to  View draft content as well as the edit wiki pages. 
+define('EDIT_WIKI', 'EDIT_WIKI');
+define('MANAGE_WIKI_PAGES', 'MANAGE_WIKI_PAGES');
+
+
 // Example configuration options below
 /*
 WikiPage::$show_edit_button = true; // | false - whether public users get an edit link when viewing a wikipage

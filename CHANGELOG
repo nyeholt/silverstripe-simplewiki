@@ -1,5 +1,15 @@
+Version 0.2.0
+2009-02
 
-Version 0.1.0 RC1
+* Added an ajax based lock mechanism that retains a lock on a page while a user
+  is editing, which lets locks time out if the user is no longer editing the
+  page
+* Explicit permissions are now available for letting people edit on the frontend
+  but not in the CMS
+* "Edit" buttons appear above and below content
+* "Cancel" button introduced
+
+Version 0.1.0
 2009-11-26
 
 Initial release of simplewiki module
