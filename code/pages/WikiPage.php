@@ -39,8 +39,8 @@ class WikiPage extends Page
 	public static $db = array(
 		'EditorType' => "Enum('Inherit,HTML,Wiki,Plain', 'Inherit')",
 		// Who was the last editor of the page?
-		'LastEditor' => 'Varchar(64)',
-		'LockExpiry' => 'SS_Datetime',
+		'WikiLastEditor' => 'Varchar(64)',
+		'WikiLockExpiry' => 'SS_Datetime',
 	);
 	
 	/**
@@ -115,13 +115,13 @@ class WikiPage extends Page
 		}
 
 		// set a lock expiry in the past if there's not one already set
-		if (!$this->LockExpiry) {
-			$this->LockExpiry = date('Y-m-d H:i:s');
+		if (!$this->WikiLockExpiry) {
+			$this->WikiLockExpiry = date('Y-m-d H:i:s');
 		}
 
 		// Make sure to set the last editor to the current user
 		if (Member::currentUser()) {
-			$this->LastEditor = Member::currentUser()->Email;
+			$this->WikiLastEditor = Member::currentUser()->Email;
 		}
 	}
 
@@ -255,8 +255,8 @@ class WikiPage extends Page
 		}
 
 		// set the updated lock expiry based on now + lock timeout
-		$this->LastEditor = $member->Email;
-		$this->LockExpiry = date('Y-m-d H:i:s', time() + WikiPage::$lock_time);
+		$this->WikiLastEditor = $member->Email;
+		$this->WikiLockExpiry = date('Y-m-d H:i:s', time() + WikiPage::$lock_time);
 
 		// save it with us as the editor
 		$this->write();
@@ -700,7 +700,7 @@ class WikiPage_Controller extends Page_Controller implements PermissionProvider
 
 		$filter = array(
 			'WikiPage.ID =' => $page->ID,
-			'LockExpiry > ' => date('Y-m-d H:i:s'),
+			'WikiLockExpiry > ' => date('Y-m-d H:i:s'),
 		);
 
 		$filter = db_quote($filter);
@@ -713,14 +713,14 @@ class WikiPage_Controller extends Page_Controller implements PermissionProvider
 		if ($currentLock && $currentLock->ID) {
 			// if there's a current lock in place, lets return that value
 			$lock = array(
-				'user' => $currentLock->LastEditor,
-				'expires' => $currentLock->LockExpiry,
+				'user' => $currentLock->WikiLastEditor,
+				'expires' => $currentLock->WikiLockExpiry,
 			);
 		}
 
 		// If we're trying to take the lock, make sure that a) there's no existing
 		// lock or b) we currently hold the lock
-		if ($doLock && ($currentLock == null || !$currentLock->ID || $currentLock->LastEditor == $user->Email)) {
+		if ($doLock && ($currentLock == null || !$currentLock->ID || $currentLock->WikiLastEditor == $user->Email)) {
 			$page->lock();
 		}
 
