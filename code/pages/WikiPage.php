@@ -35,9 +35,8 @@ OF SUCH DAMAGE.
  */
 class WikiPage extends Page
 {
-	
 	public static $db = array(
-		'EditorType' => "Enum('Inherit,HTML,Wiki,Plain', 'Inherit')",
+		'EditorType' => "Varchar(32)",
 		// Who was the last editor of the page?
 		'WikiLastEditor' => 'Varchar(64)',
 		'WikiLockExpiry' => 'SS_Datetime',
@@ -78,6 +77,23 @@ class WikiPage extends Page
 	 * @var boolean
 	 */
 	public static $show_edit_button = true;
+
+	/**
+	 * An array of plugins that allows developers to provide thirdparty field types
+	 *
+	 * @var array
+	 */
+	protected static $registered_formatters;
+
+	/**
+	 * Register a formatter
+	 *
+	 * @param SimpleWikiFormatter $formatter
+	 *			The formatter to register
+	 */
+	public static function register_formatter(SimpleWikiFormatter $formatter) {
+		self::$registered_formatters[$formatter->getFormatterName()] = $formatter;
+	}
 
 	/**
 	 * Before writing, convert any page links to appropriate 
@@ -150,7 +166,13 @@ class WikiPage extends Page
 	{
 		$fields = parent::getCMSFields();
 
-		$fields->addFieldToTab('Root.Behaviour', new OptionsetField('EditorType', _t('WikiPage.EDITORTYPE', 'Editor Type'), array('Inherit'=>'Inherit','HTML'=>'HTML','Wiki'=>'Wiki','Plain'=>'Plain')));
+		$options = array('Inherit'=>'Inherit');
+
+		foreach (self::$registered_formatters as $fieldType) {
+			$options[$fieldType->getFormatterName()] = $fieldType->getFormatterName();
+		}
+
+		$fields->addFieldToTab('Root.Behaviour', new OptionsetField('EditorType', _t('WikiPage.EDITORTYPE', 'Editor Type'), $options));
 		return $fields;
 	}
 
@@ -196,6 +218,22 @@ class WikiPage extends Page
 
 		return 'HTML';
 	}
+
+	/**
+	 * Gets the formatter for a given type. If none specified, gets the current formatter
+	 * 
+	 */
+	public function getFormatter($formatter=null) {
+		if (!$formatter) {
+			$formatter = $this->getActualEditorType();
+		}
+
+		if (!isset(self::$registered_formatters[$formatter])) {
+			throw new Exception("Formatter $formatter does not exist");
+		}
+
+		return self::$registered_formatters[$formatter];
+	}
 	
 	/**
 	 * Retrieves the page's content, passed through any necessary parsing
@@ -205,25 +243,8 @@ class WikiPage extends Page
 	 */
 	public function ParsedContent()
 	{
-		$type = $this->getActualEditorType();
-		$content = $this->Content;
-		switch ($type) {
-			case 'Wiki': {
-				$parser = &new WikiParser();
-				$parser->emphasis = array();
-				$parser->preformat = false;
-				// need to change [] urls before parsing the text otherwise
-				// the wiki parser breaks... 
-				$content = preg_replace('/\[sitetree_link id=(\d+)\]/', '|sitetree_link id=\\1|', $content);
-				$content = $parser->parse($content,'');
-				$content = preg_replace('/\|sitetree_link id=(\d+)\|/', '[sitetree_link id=\\1]', $content);
-				break;
-			}
-			default: {
-				break;
-			}
-		}
-		return $content;
+		$formatter = $this->getFormatter();
+		return $formatter->formatContent($this);
 	}
 
 	/**
@@ -360,22 +381,9 @@ class WikiPage_Controller extends Page_Controller implements PermissionProvider
 	public function EditForm()
 	{
 		$record = DataObject::get_by_id('WikiPage', $this->owner->ID);
-		$editorType = $record->getActualEditorType();
-		$editorField = null;
-		switch ($editorType) {
-			case 'Wiki': {
-				$editorField = new MarkItUpField('Content', '', 'wiki', 30, 20, $record->Content);
-				break;
-			}
-			case 'Plain': {
-				$editorField = new TextareaField('Content', '', 30, 20, $record->Content);
-			}
-			case 'HTML': 
-			default: {
-				$editorField = new HtmlEditorField('Content', '', 30, 20, $record->Content);
-				break;
-			}			
-		}
+		$formatter = $record->getFormatter();
+		
+		$editorField = $formatter->getEditingField($record);
 
 		$fields = new FieldSet(
 			$editorField,

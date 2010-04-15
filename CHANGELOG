@@ -1,3 +1,10 @@
+Vesion 0.2.1
+2010-04
+
+* Ability to register your own editor field formatters. See WikiPage::register_formatter()
+* Added Markdown formatter
+
+
 Version 0.2.0
 2009-02
 

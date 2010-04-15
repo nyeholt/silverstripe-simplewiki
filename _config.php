@@ -1,5 +1,7 @@
 <?php
 
+define('SIMPLEWIKI_DIR', dirname(__FILE__));
+
 Director::addRules(100, array(
 	'ssimplewiki/$Action' => 'WikiPage_Controller'
 ));
@@ -13,6 +15,11 @@ HtmlEditorConfig::get('default')->insertButtonsBefore('advcode', 'ss_simplelink'
 define('EDIT_WIKI', 'EDIT_WIKI');
 define('MANAGE_WIKI_PAGES', 'MANAGE_WIKI_PAGES');
 
+// Registration of wiki formatters
+WikiPage::register_formatter(new MarkdownFormatter());
+WikiPage::register_formatter(new HTMLFormatter());
+WikiPage::register_formatter(new WikiFormatter());
+WikiPage::register_formatter(new PlainFormatter());
 
 // Example configuration options below
 /*

@@ -47,6 +47,11 @@ class MarkItUpField extends TextareaField
 				Requirements::css('simplewiki/javascript/markitup/sets/wiki/style.css');
 				break;
 			}
+			case 'markdown': {
+				Requirements::javascript('simplewiki/javascript/markitup/sets/markdown/set.js');
+				Requirements::css('simplewiki/javascript/markitup/sets/markdown/style.css');
+				break;
+			}
 			default: {
 			}
 		}

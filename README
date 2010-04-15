@@ -58,6 +58,13 @@ There are 2 configuration variables to be aware of
 * WikiPage::$lock_time = 60; How many seconds pages should be locked for at any
   time.
 
+
+You can register your own formatters now by calling
+
+	WikiPage::register_formatter($formatter)
+
+with an object that implements SimpleWikiFormatter. See the MarkdownFormatter as an example
+
 Troubleshooting
 -----------------------------------------------
 
