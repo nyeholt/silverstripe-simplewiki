@@ -79,6 +79,13 @@ class WikiPage extends Page
 	public static $show_edit_button = true;
 
 	/**
+	 * Whether to run the content through HTMLPurify before we display it to users
+	 *
+	 * @var boolean
+	 */
+	public static $purify_output = true;
+
+	/**
 	 * An array of plugins that allows developers to provide thirdparty field types
 	 *
 	 * @var array
@@ -244,7 +251,16 @@ class WikiPage extends Page
 	public function ParsedContent()
 	{
 		$formatter = $this->getFormatter();
-		return $formatter->formatContent($this);
+		$content = $formatter->formatContent($this);
+
+		// purify the output - we don't want people breaking pages if we set purify=true
+		if (self::$purify_output) {
+			include_once SIMPLEWIKI_DIR.'/thirdparty/htmlpurifier-4.0.0-lite/library/HTMLPurifier.auto.php';
+			$purifier = new HTMLPurifier();
+			$content = $purifier->purify($content);
+		}
+
+		return $content;
 	}
 
 	/**
@@ -287,8 +303,6 @@ class WikiPage extends Page
 
 class WikiPage_Controller extends Page_Controller implements PermissionProvider
 {
-
-	
 	static $allowed_actions = array(
 		'linkselector',
 		'edit',

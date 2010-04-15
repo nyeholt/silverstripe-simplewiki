@@ -44,7 +44,7 @@ Quick Usage Overview
 API
 -----------------------------------------------
 
-There are 2 configuration variables to be aware of
+There are a few configuration variables to be aware of
 
 * WikiPage::$show_edit_button = true; Whether to show the "Edit Page" button to
   users who aren't logged in (thus triggering the login process)
@@ -57,6 +57,8 @@ There are 2 configuration variables to be aware of
   automatically published as per normal wiki behaviour. 
 * WikiPage::$lock_time = 60; How many seconds pages should be locked for at any
   time.
+* WikiPage::$purify_output = true; Whether content should be run through
+  HTMLPurify before being output. Defaults to true. 
 
 
 You can register your own formatters now by calling

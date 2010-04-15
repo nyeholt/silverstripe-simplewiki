@@ -36,6 +36,7 @@ class WikiFormatter implements SimpleWikiFormatter
 	}
 
 	public function formatContent(DataObject $wikiPage) {
+		include_once SIMPLEWIKI_DIR.'/thirdparty/wikiparser-1.0/class_WikiParser.php';
 		$content = $wikiPage->Content;
 		$parser = &new WikiParser();
 		$parser->emphasis = array();
