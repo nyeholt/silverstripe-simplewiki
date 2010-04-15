@@ -89,11 +89,11 @@ class MarkItUpField extends TextareaField
 			$attributes['readonly'] = 'readonly';
 		}
 
-		
+		$val = str_replace('&amp;#13;', '', htmlentities($this->value, ENT_COMPAT, 'UTF-8'));
 		return $this->createTag (
 			'textarea',
 			$attributes,
-			htmlentities($this->value, ENT_COMPAT, 'UTF-8')
+			$val
 		);
 	}
 }

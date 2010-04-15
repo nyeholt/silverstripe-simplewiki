@@ -31,8 +31,16 @@ class MarkdownFormatter implements SimpleWikiFormatter
 		return "Markdown";
 	}
 
+	/**
+	 * Note that we explicity pass the dataobject content here - if we don't, then
+	 * the form calls the Content() method of the CONTROLLER that the form is associated with, which means
+	 * that it returns the parsed content!
+	 *
+	 * @param DataObject $wikiPage
+	 * @return MarkItUpField
+	 */
 	public function getEditingField(DataObject $wikiPage) {
-		return new MarkItUpField('Content', '', 'wiki', 30, 20, $wikiPage->Content);
+		return new MarkItUpField('Content', '', 'markdown', 30, 20, $wikiPage->Content);
 	}
 
 	

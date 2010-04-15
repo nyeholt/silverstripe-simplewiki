@@ -10,7 +10,7 @@
 // -------------------------------------------------------------------
 // Feel free to add more tags
 // -------------------------------------------------------------------
-mySettings = {
+myMarkdownSettings = {
 	previewParserPath:	'',
 	onShiftEnter:		{keepDefault:false, openWith:'\n\n'},
 	markupSet: [
@@ -43,6 +43,7 @@ mySettings = {
 miu = {
 	markdownTitle: function(markItUp, char) {
 		heading = '';
+		var $ = jQuery;
 		n = $.trim(markItUp.selection||markItUp.placeHolder).length;
 		for(i = 0; i < n; i++) {
 			heading += char;

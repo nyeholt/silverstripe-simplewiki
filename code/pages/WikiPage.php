@@ -83,7 +83,7 @@ class WikiPage extends Page
 	 *
 	 * @var boolean
 	 */
-	public static $purify_output = true;
+	public static $purify_output = false;
 
 	/**
 	 * An array of plugins that allows developers to provide thirdparty field types
@@ -111,8 +111,12 @@ class WikiPage extends Page
 	protected function onBeforeWrite()
 	{
 		parent::onBeforeWrite();
-		
+
+		// Changes in 2.4 mean that $this->Content can now become polluted with UTF-8 HTML entitised garbage
+		$this->Content = str_replace('&#13;', '', $this->Content);
+
 		$newPages = $this->parseNewPagesFrom($this->Content);
+
 		foreach ($newPages as $pageTitle) {
 			$trimmedTitle = trim($pageTitle);
 			
@@ -321,6 +325,8 @@ class WikiPage_Controller extends Page_Controller implements PermissionProvider
 		'save',
 		'done',
 		'publish',
+		'cancel',
+		'revert',
 		'startediting',
 		'EditForm',
 		'LinkSelectForm',
@@ -430,6 +436,9 @@ class WikiPage_Controller extends Page_Controller implements PermissionProvider
 			);
 		}
 
+		$actions->push(new FormAction('cancel', _t('WikiPage.CANCEL_EDIT', 'Cancel')));
+		$actions->push(new FormAction('revert', _t('WikiPage.REVERT_EDIT', 'Revert')));
+
 		if (Permission::check(MANAGE_WIKI_PAGES)) {
 			$actions->push(new FormAction('addpage_t', _t('WikiPage.ADD_PAGE', 'New Page')));
 			$actions->push(new FormAction('delete', _t('WikiPage.DELETE_PAGE', 'Delete Page')));
@@ -463,6 +472,24 @@ class WikiPage_Controller extends Page_Controller implements PermissionProvider
 		$actions = new FieldSet(new FormAction('addpage', _t('WikiPage.ADD_PAGE', 'Create')));
 
 		return new Form($this, 'CreatePageForm', $fields, $actions);
+	}
+
+	/**
+	 * basic action that the user can use to just quit editing
+	 * 
+	 */
+	public function cancel() {
+		Director::redirect($this->owner->Link().'?stage=Stage');
+	}
+
+	/**
+	 * Option for the user to revert the changes made since it was last published
+	 */
+	public function revert() {
+		if ($this->owner->IsModifiedOnStage) {
+			$this->owner->doRevertToLive();
+		}
+		Director::redirect($this->owner->Link().'?stage=Live');
 	}
 
 	/**
