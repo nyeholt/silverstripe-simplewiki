@@ -258,9 +258,20 @@ class WikiPage extends Page
 			include_once SIMPLEWIKI_DIR.'/thirdparty/htmlpurifier-4.0.0-lite/library/HTMLPurifier.auto.php';
 			$purifier = new HTMLPurifier();
 			$content = $purifier->purify($content);
+			$content = preg_replace_callback('/\%5B(.*?)\%5D/', array($this, 'reformatShortcodes'), $content);
 		}
 
 		return $content;
+	}
+
+	/**
+	 * Reformats shortcodes after being run through htmlpurifier
+	 *
+	 * @param array $matches
+	 */
+	public function reformatShortcodes($matches) {
+		$val = urldecode($matches[1]);
+		return '['.$val.']';
 	}
 
 	/**
