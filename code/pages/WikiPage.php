@@ -763,7 +763,7 @@ class WikiPage_Controller extends Page_Controller implements PermissionProvider
 			'WikiLockExpiry > ' => date('Y-m-d H:i:s'),
 		);
 
-		$filter = db_quote($filter);
+		$filter = singleton('SimpleWikiUtils')->quote($filter);
 
 		$user = Member::currentUser();
 		$currentLock = DataObject::get_one('WikiPage', $filter);
