@@ -40,7 +40,7 @@ class MarkdownFormatter implements SimpleWikiFormatter
 	 * @return MarkItUpField
 	 */
 	public function getEditingField(DataObject $wikiPage) {
-		return new MarkItUpField('Content', '', 'markdown', 30, 20, $wikiPage->Content);
+		return new MarkItUpField('Content', '', 'markdown', 30, 20);
 	}
 
 	

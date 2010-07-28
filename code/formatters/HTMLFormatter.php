@@ -32,7 +32,7 @@ class HTMLFormatter implements SimpleWikiFormatter
 	}
 
 	public function getEditingField(DataObject $wikiPage) {
-		return new HtmlEditorField('Content', '', 30, 20, $wikiPage->Content);
+		return new HtmlEditorField('Content', '', 30, 20);
 	}
 
 

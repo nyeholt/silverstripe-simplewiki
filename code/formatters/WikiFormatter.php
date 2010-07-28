@@ -32,7 +32,7 @@ class WikiFormatter implements SimpleWikiFormatter
 	}
 
 	public function getEditingField(DataObject $wikiPage) {
-		return new MarkItUpField('Content', '', 'wiki', 30, 20, $wikiPage->Content);
+		return new MarkItUpField('Content', '', 'wiki', 30, 20);
 	}
 
 	public function formatContent(DataObject $wikiPage) {
