@@ -1,4 +1,10 @@
-Vesion 0.2.1
+Version 0.2.2
+2010-07
+
+* Can change the type of editor from the frontend
+* Can link a formatter to a help page
+
+Version 0.2.1
 2010-04
 
 * Ability to register your own editor field formatters. See WikiPage::register_formatter()
