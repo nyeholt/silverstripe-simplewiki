@@ -32,12 +32,16 @@ class HTMLFormatter implements SimpleWikiFormatter
 	}
 
 	public function getEditingField(DataObject $wikiPage) {
-		return new HtmlEditorField('Content', '', 30, 20, $wikiPage->Content);
+		return new HtmlEditorField('Content', '', 30, 20);
 	}
 
 
 	public function formatContent(DataObject $wikiPage) {
 		return $wikiPage->Content;
+	}
+
+	public function getHelpUrl() {
+		return 'http://tinymce.moxiecode.com/';
 	}
 }
 ?>

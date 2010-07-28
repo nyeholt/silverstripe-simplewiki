@@ -47,5 +47,10 @@ interface SimpleWikiFormatter
 	 *			The page being edited
 	 */
 	public function formatContent(DataObject $wikiPage);
+
+	/**
+	 * Get a URL that links to a page showing relevant help functionality
+	 */
+	public function getHelpUrl();
 }
 ?>

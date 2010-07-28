@@ -32,7 +32,7 @@ class PlainFormatter implements SimpleWikiFormatter
 	}
 
 	public function getEditingField(DataObject $wikiPage) {
-		return new TextareaField('Content', '', 30, 20, $wikiPage->Content);
+		return new TextareaField('Content', '', 30, 20);
 	}
 
 
@@ -40,5 +40,8 @@ class PlainFormatter implements SimpleWikiFormatter
 		return $wikiPage->Content;
 	}
 
+	public function getHelpUrl() {
+		return null;
+	}
 }
 ?>

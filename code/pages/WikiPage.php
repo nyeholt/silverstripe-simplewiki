@@ -177,14 +177,18 @@ class WikiPage extends Page
 	{
 		$fields = parent::getCMSFields();
 
-		$options = array('Inherit'=>'Inherit');
-
-		foreach (self::$registered_formatters as $fieldType) {
-			$options[$fieldType->getFormatterName()] = $fieldType->getFormatterName();
-		}
+		$options = $this->getEditorTypeOptions();
 
 		$fields->addFieldToTab('Root.Behaviour', new OptionsetField('EditorType', _t('WikiPage.EDITORTYPE', 'Editor Type'), $options));
 		return $fields;
+	}
+
+	public function getEditorTypeOptions() {
+		$options = array('Inherit'=>'Inherit');
+		foreach (self::$registered_formatters as $fieldType) {
+			$options[$fieldType->getFormatterName()] = $fieldType->getFormatterName();
+		}
+		return $options;
 	}
 
 	/**
@@ -411,16 +415,24 @@ class WikiPage_Controller extends Page_Controller implements PermissionProvider
 	 */
 	public function EditForm()
 	{
-		$record = DataObject::get_by_id('WikiPage', $this->owner->ID);
+		// make sure to load fresh from db
+		$record = DataObject::get_by_id('WikiPage', $this->data()->ID);
 		$formatter = $record->getFormatter();
 		
 		$editorField = $formatter->getEditingField($record);
+		$helpLink = $formatter->getHelpUrl();
+
 
 		$fields = new FieldSet(
 			$editorField,
+			new DropdownField('EditorType', _t('WikiPage.EDITORTYPE', 'Editor Type'), $this->data()->getEditorTypeOptions()),
 			new HiddenField('LockUpdate', '', $this->owner->Link('updatelock')),
 			new HiddenField('LockLength', '', WikiPage::$lock_time - 10)
 		);
+
+		if ($helpLink) {
+			$fields->push(new LiteralField('HelpLink', '<a target="_blank" href="'.$helpLink.'">'._t('WikiPage.EDITOR_HELP_LINK', 'Editor Help').'</a>'));
+		}
 
 		$actions = null;
 		if (!WikiPage::$auto_publish) {
@@ -444,7 +456,9 @@ class WikiPage_Controller extends Page_Controller implements PermissionProvider
 			$actions->push(new FormAction('delete', _t('WikiPage.DELETE_PAGE', 'Delete Page')));
 		}
 
-		return new Form($this, "EditForm", $fields, $actions);
+		$form = new Form($this, "EditForm", $fields, $actions);
+		$form->loadDataFrom($record);
+		return $form;
 	}
 
 	/**

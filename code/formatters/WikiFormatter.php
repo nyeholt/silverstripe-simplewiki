@@ -32,7 +32,7 @@ class WikiFormatter implements SimpleWikiFormatter
 	}
 
 	public function getEditingField(DataObject $wikiPage) {
-		return new MarkItUpField('Content', '', 'wiki', 30, 20, $wikiPage->Content);
+		return new MarkItUpField('Content', '', 'wiki', 30, 20);
 	}
 
 	public function formatContent(DataObject $wikiPage) {
@@ -48,6 +48,10 @@ class WikiFormatter implements SimpleWikiFormatter
 		$content = preg_replace('/\|sitetree_link id=(\d+)\|/', '[sitetree_link id=\\1]', $content);
 
 		return $content;
+	}
+
+	public function getHelpUrl() {
+		return null;
 	}
 }
 ?>
