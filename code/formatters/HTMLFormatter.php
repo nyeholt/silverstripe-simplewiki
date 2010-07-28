@@ -39,5 +39,9 @@ class HTMLFormatter implements SimpleWikiFormatter
 	public function formatContent(DataObject $wikiPage) {
 		return $wikiPage->Content;
 	}
+
+	public function getHelpUrl() {
+		return 'http://tinymce.moxiecode.com/';
+	}
 }
 ?>

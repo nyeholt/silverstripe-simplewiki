@@ -49,5 +49,9 @@ class WikiFormatter implements SimpleWikiFormatter
 
 		return $content;
 	}
+
+	public function getHelpUrl() {
+		return null;
+	}
 }
 ?>

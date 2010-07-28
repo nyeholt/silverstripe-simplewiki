@@ -40,5 +40,8 @@ class PlainFormatter implements SimpleWikiFormatter
 		return $wikiPage->Content;
 	}
 
+	public function getHelpUrl() {
+		return null;
+	}
 }
 ?>

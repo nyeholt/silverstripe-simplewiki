@@ -50,5 +50,9 @@ class MarkdownFormatter implements SimpleWikiFormatter
 		include_once SIMPLEWIKI_DIR.'/thirdparty/php-markdown-extra-1.2.4/markdown.php';
 		return Markdown($content);
 	}
+
+	public function getHelpUrl() {
+		return 'http://daringfireball.net/projects/markdown/syntax.php';
+	}
 }
 ?>

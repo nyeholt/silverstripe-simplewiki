@@ -420,6 +420,8 @@ class WikiPage_Controller extends Page_Controller implements PermissionProvider
 		$formatter = $record->getFormatter();
 		
 		$editorField = $formatter->getEditingField($record);
+		$helpLink = $formatter->getHelpUrl();
+
 
 		$fields = new FieldSet(
 			$editorField,
@@ -427,6 +429,10 @@ class WikiPage_Controller extends Page_Controller implements PermissionProvider
 			new HiddenField('LockUpdate', '', $this->owner->Link('updatelock')),
 			new HiddenField('LockLength', '', WikiPage::$lock_time - 10)
 		);
+
+		if ($helpLink) {
+			$fields->push(new LiteralField('HelpLink', '<a target="_blank" href="'.$helpLink.'">'._t('WikiPage.EDITOR_HELP_LINK', 'Editor Help').'</a>'));
+		}
 
 		$actions = null;
 		if (!WikiPage::$auto_publish) {
