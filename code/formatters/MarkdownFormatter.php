@@ -52,7 +52,7 @@ class MarkdownFormatter implements SimpleWikiFormatter
 	}
 
 	public function getHelpUrl() {
-		return 'http://michelf.com/projects/php-markdown/syntax/';
+		return 'http://michelf.com/projects/php-markdown/extra/';
 	}
 }
 ?>
