@@ -43,7 +43,6 @@ class MarkdownFormatter implements SimpleWikiFormatter
 		return new MarkItUpField('Content', '', 'markdown', 30, 20);
 	}
 
-	
 	public function formatContent(DataObject $wikiPage) {
 		$content = $wikiPage->Content;
 
