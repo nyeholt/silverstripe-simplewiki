@@ -6,6 +6,10 @@ Director::addRules(100, array(
 	'ssimplewiki/$Action' => 'WikiPage_Controller'
 ));
 
+if (($SIMPLEWIKI_EDITING_MODULE = basename(dirname(__FILE__))) != 'simplewiki') {
+	die("The SimpleWiki module MUST be in the /simplewiki directory, not $SIMPLEWIKI_EDITING_MODULE");
+}
+
 HtmlEditorConfig::get('default')->enablePlugins('sslinks');
 HtmlEditorConfig::get('default')->insertButtonsBefore('advcode', 'ss_simplelink', 'unlink', 'ss_simpleimage');
 
