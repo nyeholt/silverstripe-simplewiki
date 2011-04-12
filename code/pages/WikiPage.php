@@ -389,7 +389,7 @@ class WikiPage_Controller extends Page_Controller implements PermissionProvider
 	public function edit()
 	{
 		HtmlEditorField::include_js();
-		Requirements::javascript('simplewiki/javascript/sslinks/editor_plugin_src.js');
+//		Requirements::javascript('simplewiki/javascript/sslinks/editor_plugin_src.js');
 
 		$existing = $this->getEditingLocks($this->owner, true);
 		// oops, we've somehow got here even though we shouldn't have
