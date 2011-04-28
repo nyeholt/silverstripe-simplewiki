@@ -1,56 +1,85 @@
 <?php
-/*
-
-Copyright (c) 2009, SilverStripe Australia PTY LTD - www.silverstripe.com.au
-All rights reserved.
-
-Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
-
-    * Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
-    * Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the
-      documentation and/or other materials provided with the distribution.
-    * Neither the name of SilverStripe nor the names of its contributors may be used to endorse or promote products derived from this software
-      without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
-LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE
-GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
-STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY
-OF SUCH DAMAGE.
-*/
-
 /**
  * Interface defining a formatter that can be used in wikis
  *
  * @author Marcus Nyeholt <marcus@silverstripe.com.au>
+ * @license BSD License (http://silverstripe.org/BSD-License)
  */
-interface SimpleWikiFormatter
-{
+abstract class SimpleWikiFormatter {
+
+	/**
+	 * Analyse content just after it's saved. This is useful for creating
+	 * new pages etc where referenced by particular formatting
+	 */
+	public function analyseSavedContent($wikiPage) {
+		$newPages = $this->parseNewPagesFrom($wikiPage->Content);
+
+		foreach ($newPages as $pageTitle) {
+			$trimmedTitle = trim($pageTitle);
+
+			// need to trim the title before doing the search
+			$page = DataObject::get_one('WikiPage', '"SiteTree"."Title" = \'' . Convert::raw2sql($trimmedTitle) . '\'');
+
+			if (!$page) {
+				// it's a new page, so create that
+				$page = new WikiPage();
+				$page->Title = $trimmedTitle;
+				$page->MenuTitle = $trimmedTitle;
+				$page->ParentID = $wikiPage->ID;
+				$page->write();
+
+				// publish if we're on autopublish
+				if (WikiPage::$auto_publish) {
+					$page->doPublish();
+				}
+			}
+
+			$replacement = '<a href="[sitetree_link id=' . $page->ID . ']">' . $pageTitle . '</a>';
+			$wikiPage->Content = str_replace('[[' . $pageTitle . ']]', $replacement, $wikiPage->Content);
+		}
+	}
+	
+	
+	/**
+	 * Separated into a separate method for testing
+	 * 
+	 * @param String $content
+	 * @return array
+	 */
+	public function parseNewPagesFrom($content) {
+		$pages = array();
+		if (preg_match_all('/\[\[([\w\s_.-]+)\]\]/', $content, $matches)) {
+			// exit(print_r($matches));
+			foreach ($matches[1] as $pageTitle) {
+				$pages[] = $pageTitle;
+			}
+		}
+
+		return $pages;
+	}
 
 	/**
 	 * Gets the type of this formatter as a string
 	 */
-	public function getFormatterName();
+	public abstract function getFormatterName();
 
 	/**
 	 * Get the CMS field for editing this kind of element
 	 * @param DataObject $wikiPage
-	 *			The page being edited
+	 * 			The page being edited
 	 */
-    public function getEditingField(DataObject $wikiPage);
+	public abstract function getEditingField(DataObject $wikiPage);
 
 	/**
 	 * Format the content for output
 	 *
 	 * @param DataObject $wikiPage
-	 *			The page being edited
+	 * 			The page being edited
 	 */
-	public function formatContent(DataObject $wikiPage);
+	public abstract function formatContent(DataObject $wikiPage);
 
 	/**
 	 * Get a URL that links to a page showing relevant help functionality
 	 */
-	public function getHelpUrl();
+	public abstract function getHelpUrl();
 }
-?>

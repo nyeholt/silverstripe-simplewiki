@@ -1,25 +1,26 @@
 <?php
+
 /**
 
-Copyright (c) 2009, SilverStripe Australia PTY LTD - www.silverstripe.com.au
-All rights reserved.
+  Copyright (c) 2009, SilverStripe Australia PTY LTD - www.silverstripe.com.au
+  All rights reserved.
 
-Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+  Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
 
-    * Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
-    * Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the 
-      documentation and/or other materials provided with the distribution.
-    * Neither the name of SilverStripe nor the names of its contributors may be used to endorse or promote products derived from this software 
-      without specific prior written permission.
+ * Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+ * Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the 
+  documentation and/or other materials provided with the distribution.
+ * Neither the name of SilverStripe nor the names of its contributors may be used to endorse or promote products derived from this software 
+  without specific prior written permission.
 
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE 
-IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE 
-LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE 
-GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, 
-STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY 
-OF SUCH DAMAGE.
- 
-*/
+  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+  LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE
+  GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
+  STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY
+  OF SUCH DAMAGE.
+
+ */
 
 /**
  * A page type that provides wiki like editing functionality. The  
@@ -31,17 +32,16 @@ OF SUCH DAMAGE.
  * - add images picking images from the tree selection control
  * 
  * @author Marcus Nyeholt <marcus@silverstripe.com.au>
- *
+ * @license BSD License (http://silverstripe.org/BSD-License)
  */
-class WikiPage extends Page
-{
+class WikiPage extends Page {
+
 	public static $db = array(
-		'EditorType' => "Varchar(32)",
+		'EditorType'		=> "Varchar(32)",
 		// Who was the last editor of the page?
-		'WikiLastEditor' => 'Varchar(64)',
-		'WikiLockExpiry' => 'SS_Datetime',
+		'WikiLastEditor'	=> 'Varchar(64)',
+		'WikiLockExpiry'	=> 'SS_Datetime',
 	);
-	
 	/**
 	 * lock pages for 1 minute at a time by default
 	 *
@@ -50,8 +50,6 @@ class WikiPage extends Page
 	 * @var int
 	 */
 	public static $lock_time = 60;
-
-		
 	/**
 	 * Set this to true in your mysite/_config.php file to force publishing
 	 * as soon as you hit save. Removes the potentially awkward step of
@@ -67,7 +65,6 @@ class WikiPage extends Page
 	 * @var boolean
 	 */
 	public static $auto_publish = true;
-	
 	/**
 	 * Whether or not to allow public users to see the 'edit' button. If not
 	 * set, the user must manually know to hit the 'edit' URL, or the assumption
@@ -77,14 +74,12 @@ class WikiPage extends Page
 	 * @var boolean
 	 */
 	public static $show_edit_button = true;
-
 	/**
 	 * Whether to run the content through HTMLPurify before we display it to users
 	 *
 	 * @var boolean
 	 */
 	public static $purify_output = false;
-
 	/**
 	 * An array of plugins that allows developers to provide thirdparty field types
 	 *
@@ -96,7 +91,7 @@ class WikiPage extends Page
 	 * Register a formatter
 	 *
 	 * @param SimpleWikiFormatter $formatter
-	 *			The formatter to register
+	 * 			The formatter to register
 	 */
 	public static function register_formatter(SimpleWikiFormatter $formatter) {
 		self::$registered_formatters[$formatter->getFormatterName()] = $formatter;
@@ -108,38 +103,15 @@ class WikiPage extends Page
 	 * 
 	 * @see sapphire/core/model/SiteTree#onBeforeWrite()
 	 */
-	protected function onBeforeWrite()
-	{
+	protected function onBeforeWrite() {
 		parent::onBeforeWrite();
 
 		// Changes in 2.4 mean that $this->Content can now become polluted with UTF-8 HTML entitised garbage
+		// we'll leave this legacy conversion in for now?
 		$this->Content = str_replace('&#13;', '', $this->Content);
 
-		$newPages = $this->parseNewPagesFrom($this->Content);
-
-		foreach ($newPages as $pageTitle) {
-			$trimmedTitle = trim($pageTitle);
-			
-			// need to trim the title before doing the search
-			$page = DataObject::get_one('WikiPage', "SiteTree.Title='".Convert::raw2sql($trimmedTitle)."'");
-
-			if (!$page) {
-				// it's a new page, so create that
-				$page = new WikiPage();
-				$page->Title = $trimmedTitle;
-				$page->MenuTitle = $trimmedTitle;
-				$page->ParentID = $this->ID;
-				$page->write();
-				
-				// publish if we're on autopublish
-				if (WikiPage::$auto_publish) {
-					$page->doPublish();
-				}
-			}
-
-			$replacement = '<a href="[sitetree_link id='.$page->ID.']">'.$pageTitle.'</a>';
-			$this->Content = str_replace('[['.$pageTitle.']]', $replacement, $this->Content);
-		}
+		$formatter = $this->getFormatter();
+		$formatter->analyseSavedContent($this);
 
 		// set a lock expiry in the past if there's not one already set
 		if (!$this->WikiLockExpiry) {
@@ -157,8 +129,7 @@ class WikiPage extends Page
 	 *
 	 * If the
 	 */
-	public function canEdit($member=null)
-	{
+	public function canEdit($member=null) {
 		$can = parent::canEdit($member);
 
 		if (!$can) {
@@ -173,8 +144,7 @@ class WikiPage extends Page
 	 * Get the CMS fields
 	 * @see sapphire/core/model/SiteTree#getCMSFields()
 	 */
-	public function getCMSFields()
-	{
+	public function getCMSFields() {
 		$fields = parent::getCMSFields();
 
 		$options = $this->getEditorTypeOptions();
@@ -184,31 +154,13 @@ class WikiPage extends Page
 	}
 
 	public function getEditorTypeOptions() {
-		$options = array('Inherit'=>'Inherit');
+		$options = array('Inherit' => 'Inherit');
 		foreach (self::$registered_formatters as $fieldType) {
 			$options[$fieldType->getFormatterName()] = $fieldType->getFormatterName();
 		}
 		return $options;
 	}
 
-	/**
-	 * Separated into a separate method for testing
-	 * 
-	 * @param String $content
-	 * @return array
-	 */
-	public function parseNewPagesFrom($content)
-	{
-		$pages = array();
-		if (preg_match_all('/\[\[([\w\s_.-]+)\]\]/', $content, $matches)) {
-			// exit(print_r($matches));
-			foreach ($matches[1] as $pageTitle) {
-				$pages[] = $pageTitle;
-			}
-		}
-
-		return $pages;
-	}
 
 	/**
 	 * Return the editor type to use for this item. Will interrogate
@@ -216,8 +168,7 @@ class WikiPage extends Page
 	 * 
 	 * @return String
 	 */
-	public function getActualEditorType()
-	{
+	public function getActualEditorType() {
 		if ($this->EditorType && $this->EditorType != 'Inherit') {
 			return $this->EditorType;
 		}
@@ -237,6 +188,7 @@ class WikiPage extends Page
 	/**
 	 * Gets the formatter for a given type. If none specified, gets the current formatter
 	 * 
+	 * @return SimpleWikiFormatter
 	 */
 	public function getFormatter($formatter=null) {
 		if (!$formatter) {
@@ -249,21 +201,20 @@ class WikiPage extends Page
 
 		return self::$registered_formatters[$formatter];
 	}
-	
+
 	/**
 	 * Retrieves the page's content, passed through any necessary parsing
 	 * eg Wiki based content
 	 * 
 	 * @return String
 	 */
-	public function ParsedContent()
-	{
+	public function ParsedContent() {
 		$formatter = $this->getFormatter();
 		$content = $formatter->formatContent($this);
 
 		// purify the output - we don't want people breaking pages if we set purify=true
 		if (self::$purify_output) {
-			include_once SIMPLEWIKI_DIR.'/thirdparty/htmlpurifier-4.0.0-lite/library/HTMLPurifier.auto.php';
+			include_once SIMPLEWIKI_DIR . '/thirdparty/htmlpurifier-4.0.0-lite/library/HTMLPurifier.auto.php';
 			$purifier = new HTMLPurifier();
 			$content = $purifier->purify($content);
 			$content = preg_replace_callback('/\%5B(.*?)\%5D/', array($this, 'reformatShortcodes'), $content);
@@ -279,7 +230,7 @@ class WikiPage extends Page
 	 */
 	public function reformatShortcodes($matches) {
 		$val = urldecode($matches[1]);
-		return '['.$val.']';
+		return '[' . $val . ']';
 	}
 
 	/**
@@ -287,8 +238,7 @@ class WikiPage extends Page
 	 *
 	 * @return WikiPage
 	 */
-	public function getWikiRoot()
-	{
+	public function getWikiRoot() {
 		$current = $this;
 		$parent = $current->Parent();
 		while ($parent instanceof WikiPage) {
@@ -302,10 +252,9 @@ class WikiPage extends Page
 	 * Lock the page for the current user
 	 *
 	 * @param Member $member
-	 *			The user to lock the page for
+	 * 			The user to lock the page for
 	 */
-	public function lock($member = null)
-	{
+	public function lock($member = null) {
 		if (!$member) {
 			$member = Member::currentUser();
 		}
@@ -317,11 +266,11 @@ class WikiPage extends Page
 		// save it with us as the editor
 		$this->write();
 	}
+
 }
 
+class WikiPage_Controller extends Page_Controller implements PermissionProvider {
 
-class WikiPage_Controller extends Page_Controller implements PermissionProvider
-{
 	static $allowed_actions = array(
 		'linkselector',
 		'edit',
@@ -341,11 +290,10 @@ class WikiPage_Controller extends Page_Controller implements PermissionProvider
 		'updatelock',
 	);
 
-	public function init()
-	{
-	    parent::init();
-	    Requirements::javascript(THIRDPARTY_DIR.'/jquery/jquery.js');
-	    Requirements::javascript('simplewiki/javascript/simplewiki.js');
+	public function init() {
+		parent::init();
+		Requirements::javascript(THIRDPARTY_DIR . '/jquery/jquery.js');
+		Requirements::javascript('simplewiki/javascript/simplewiki.js');
 		Requirements::css('simplewiki/css/simplewiki.css');
 	}
 
@@ -354,17 +302,16 @@ class WikiPage_Controller extends Page_Controller implements PermissionProvider
 	 *
 	 * @return array
 	 */
-	public function providePermissions()
-	{
+	public function providePermissions() {
 		return array(
-			EDIT_WIKI => array (
-				'name' =>  _t('WikiPage.PERM_EDIT', 'Edit Wiki Pages'),
+			EDIT_WIKI => array(
+				'name' => _t('WikiPage.PERM_EDIT', 'Edit Wiki Pages'),
 				'category' => _t('WikiPage.WIKI_CATEGORY', 'Wiki'),
 				'sort' => -100,
 				'help' => _t('WikiPage.PERM_EDIT_HELP', 'Allows users to edit wiki pages')
 			),
-			MANAGE_WIKI_PAGES => array (
-				'name' =>   _t('WikiPage.MANAGE_PAGES', 'Manage Wiki pages'),
+			MANAGE_WIKI_PAGES => array(
+				'name' => _t('WikiPage.MANAGE_PAGES', 'Manage Wiki pages'),
 				'category' => _t('WikiPage.WIKI_CATEGORY', 'Wiki'),
 				'sort' => -100,
 				'help' => _t('WikiPage.CREATE_PAGES_HELP', 'Display controls that allow users to create and delete aribtrary pages from the Wiki editing UI')
@@ -386,8 +333,7 @@ class WikiPage_Controller extends Page_Controller implements PermissionProvider
 	 * as well as adding in a couple of additional toolbar actions
 	 * for adding a simple link and a simple image
 	 */
-	public function edit()
-	{
+	public function edit() {
 		HtmlEditorField::include_js();
 		Requirements::javascript('simplewiki/javascript/sslinks/editor_plugin_src.js');
 
@@ -398,7 +344,7 @@ class WikiPage_Controller extends Page_Controller implements PermissionProvider
 			return;
 		}
 
-		if(!$this->owner->canEdit()) {
+		if (!$this->owner->canEdit()) {
 			return Security::permissionFailure($this);
 		}
 
@@ -413,38 +359,37 @@ class WikiPage_Controller extends Page_Controller implements PermissionProvider
 	 * 
 	 * @return Form
 	 */
-	public function EditForm()
-	{
+	public function EditForm() {
 		// make sure to load fresh from db
 		$record = DataObject::get_by_id('WikiPage', $this->data()->ID);
 		$formatter = $record->getFormatter();
-		
+
 		$editorField = $formatter->getEditingField($record);
 		$helpLink = $formatter->getHelpUrl();
 
 
 		$fields = new FieldSet(
-			$editorField,
-			new DropdownField('EditorType', _t('WikiPage.EDITORTYPE', 'Editor Type'), $this->data()->getEditorTypeOptions()),
-			new HiddenField('LockUpdate', '', $this->owner->Link('updatelock')),
-			new HiddenField('LockLength', '', WikiPage::$lock_time - 10)
+						$editorField,
+						new DropdownField('EditorType', _t('WikiPage.EDITORTYPE', 'Editor Type'), $this->data()->getEditorTypeOptions()),
+						new HiddenField('LockUpdate', '', $this->owner->Link('updatelock')),
+						new HiddenField('LockLength', '', WikiPage::$lock_time - 10)
 		);
 
 		if ($helpLink) {
-			$fields->push(new LiteralField('HelpLink', '<a target="_blank" href="'.$helpLink.'">'._t('WikiPage.EDITOR_HELP_LINK', 'Editor Help').'</a>'));
+			$fields->push(new LiteralField('HelpLink', '<a target="_blank" href="' . $helpLink . '">' . _t('WikiPage.EDITOR_HELP_LINK', 'Editor Help') . '</a>'));
 		}
 
 		$actions = null;
 		if (!WikiPage::$auto_publish) {
 			$actions = new FieldSet(
-				new FormAction('save', _t('WikiPage.SAVE','Save')),
-				new FormAction('done', _t('WikiPage.DONE','Done (Draft)')),
-				new FormAction('publish', _t('WikiPage.PUBLISH','Publish'))
+							new FormAction('save', _t('WikiPage.SAVE', 'Save')),
+							new FormAction('done', _t('WikiPage.DONE', 'Done (Draft)')),
+							new FormAction('publish', _t('WikiPage.PUBLISH', 'Publish'))
 			);
 		} else {
 			$actions = new FieldSet(
-				new FormAction('save', _t('WikiPage.SAVE','Save')),
-				new FormAction('publish', _t('WikiPage.FINISHED','Finished'))
+							new FormAction('save', _t('WikiPage.SAVE', 'Save')),
+							new FormAction('publish', _t('WikiPage.FINISHED', 'Finished'))
 			);
 		}
 
@@ -467,8 +412,7 @@ class WikiPage_Controller extends Page_Controller implements PermissionProvider
 	 *
 	 * @return Form
 	 */
-	public function CreatePageForm()
-	{
+	public function CreatePageForm() {
 		$createOptions = array(
 			'child' => 'As a child of the selected page',
 			'sibling' => 'As a sibling of the selected page',
@@ -478,9 +422,9 @@ class WikiPage_Controller extends Page_Controller implements PermissionProvider
 		$pageTree->setValue($this->ID);
 		$pageTree->setTreeBaseID($this->data()->getWikiRoot()->ID);
 		$fields = new FieldSet(
-		    new TextField('NewPageName', _t('WikiPage.NEW_PAGE_NAME', 'New Page Name')),
-		    $pageTree,
-			new OptionsetField('CreateType', _t('WikiPage.CREATE_OPTIONS', 'and create the new page '), $createOptions, 'child')
+						new TextField('NewPageName', _t('WikiPage.NEW_PAGE_NAME', 'New Page Name')),
+						$pageTree,
+						new OptionsetField('CreateType', _t('WikiPage.CREATE_OPTIONS', 'and create the new page '), $createOptions, 'child')
 		);
 
 		$actions = new FieldSet(new FormAction('addpage', _t('WikiPage.ADD_PAGE', 'Create')));
@@ -493,7 +437,7 @@ class WikiPage_Controller extends Page_Controller implements PermissionProvider
 	 * 
 	 */
 	public function cancel() {
-		Director::redirect($this->owner->Link().'?stage=Stage');
+		Director::redirect($this->owner->Link() . '?stage=Stage');
 	}
 
 	/**
@@ -503,7 +447,7 @@ class WikiPage_Controller extends Page_Controller implements PermissionProvider
 		if ($this->owner->IsModifiedOnStage) {
 			$this->owner->doRevertToLive();
 		}
-		Director::redirect($this->owner->Link().'?stage=Live');
+		Director::redirect($this->owner->Link() . '?stage=Live');
 	}
 
 	/**
@@ -511,8 +455,7 @@ class WikiPage_Controller extends Page_Controller implements PermissionProvider
 	 * of the now deleted page.
 	 *
 	 */
-	public function delete()
-	{
+	public function delete() {
 		$page = $this->owner;
 		/* @var $page Page */
 		if ($page) {
@@ -530,7 +473,7 @@ class WikiPage_Controller extends Page_Controller implements PermissionProvider
 
 			Director::redirect($parent->Link());
 			return;
-		} 
+		}
 
 		throw new Exception("Invalid request");
 	}
@@ -539,8 +482,7 @@ class WikiPage_Controller extends Page_Controller implements PermissionProvider
 	 * Creates an entirely new page as a child of the current page, or
 	 * 'after' a selected page.
 	 */
-	public function addpage($args)
-	{
+	public function addpage($args) {
 		if (!Permission::check(MANAGE_WIKI_PAGES)) {
 			return Security::permissionFailure($this);
 		}
@@ -568,14 +510,14 @@ class WikiPage_Controller extends Page_Controller implements PermissionProvider
 
 		switch ($createType) {
 			case 'sibling': {
-				$page->ParentID = $createContext->ParentID;
-				break;
-			}
-			case 'child': 
+					$page->ParentID = $createContext->ParentID;
+					break;
+				}
+			case 'child':
 			default: {
-				$page->ParentID = $createContext->ID;
-				break;
-			}
+					$page->ParentID = $createContext->ID;
+					break;
+				}
 		}
 
 		$page->write();
@@ -585,7 +527,7 @@ class WikiPage_Controller extends Page_Controller implements PermissionProvider
 			$page->doPublish();
 		}
 
-		Director::redirect($page->Link('edit').'?stage=Stage');
+		Director::redirect($page->Link('edit') . '?stage=Stage');
 	}
 
 	/**
@@ -594,13 +536,12 @@ class WikiPage_Controller extends Page_Controller implements PermissionProvider
 	 * @param array $data
 	 * @return WikiPage
 	 */
-	protected function savePage($page, $form = null, $stage = 'Stage')
-	{
+	protected function savePage($page, $form = null, $stage = 'Stage') {
 		// save stuff then reuse the edit action
 		if ($form) {
 			$form->saveInto($page);
 		}
-		$page->Status = ($page->Status == "New page" || $page->Status == "Saved (new)") ? "Saved (new)" : "Saved (update)"; 
+		$page->Status = ($page->Status == "New page" || $page->Status == "Saved (new)") ? "Saved (new)" : "Saved (update)";
 		$page->write($stage);
 	}
 
@@ -609,9 +550,8 @@ class WikiPage_Controller extends Page_Controller implements PermissionProvider
 	 * 
 	 * @return 
 	 */
-	public function save($data, $form)
-	{
-		if(!$this->owner->canEdit()) {
+	public function save($data, $form) {
+		if (!$this->owner->canEdit()) {
 			return Security::permissionFailure($this);
 		}
 
@@ -627,7 +567,7 @@ class WikiPage_Controller extends Page_Controller implements PermissionProvider
 			$this->owner->doPublish();
 		}
 
-		Director::redirect($this->owner->Link('edit').'?stage=Stage');
+		Director::redirect($this->owner->Link('edit') . '?stage=Stage');
 	}
 
 	/**
@@ -636,26 +576,24 @@ class WikiPage_Controller extends Page_Controller implements PermissionProvider
 	 * @param mixed $data
 	 * @param Form $form
 	 */
-	public function done($data, $form)
-	{
-		if(!$this->owner->canEdit()) {
+	public function done($data, $form) {
+		if (!$this->owner->canEdit()) {
 			return Security::permissionFailure($this);
 		}
 		// save stuff then reuse the edit action
 		$this->savePage($this->owner, $form);
 
-		Director::redirect($this->owner->Link().'?stage=Stage');
+		Director::redirect($this->owner->Link() . '?stage=Stage');
 	}
-	
+
 	/**
 	 * Complete editing and publish the data
 	 * 
 	 * @param mixed $data
 	 * @param Form $form
 	 */
-	public function publish($data, $form)
-	{
-		if(!$this->owner->canEdit()) {
+	public function publish($data, $form) {
+		if (!$this->owner->canEdit()) {
 			return Security::permissionFailure($this);
 		}
 		// save stuff then reuse the edit action
@@ -664,9 +602,9 @@ class WikiPage_Controller extends Page_Controller implements PermissionProvider
 
 		// Make sure we're on the live content now
 		Versioned::reading_stage('Live');
-		
+
 		// and go 
-		Director::redirect($this->owner->Link().'?stage=Live');
+		Director::redirect($this->owner->Link() . '?stage=Live');
 	}
 
 	/**
@@ -675,12 +613,11 @@ class WikiPage_Controller extends Page_Controller implements PermissionProvider
 	 * 
 	 * @return String
 	 */
-	public function Content()
-	{
+	public function Content() {
 		if ($this->form) {
 			return '';
 		}
-		
+
 		return $this->owner->ParsedContent(); //XML_val('Content');
 	}
 
@@ -690,8 +627,7 @@ class WikiPage_Controller extends Page_Controller implements PermissionProvider
 	 * 
 	 * @return Form
 	 */
-	public function Form()
-	{
+	public function Form() {
 		// The editing form hasn't been put in place by the 'edit' action
 		// so lets just show the status form
 		$append = '';
@@ -717,19 +653,18 @@ class WikiPage_Controller extends Page_Controller implements PermissionProvider
 	 * 
 	 * @return Form
 	 */
-	public function StatusForm()
-	{
+	public function StatusForm() {
 		$existing = $this->getEditingLocks($this->owner);
 
 		if ($existing && $existing['user'] != Member::currentUser()->Email) {
 			$fields = new FieldSet(
-				new ReadonlyField('ExistingEditor', '', _t('WikiPage.EXISTINGEDITOR', 'This page is currently locked for editing by '.$existing['user']. ' until ' . $existing['expires']))
+							new ReadonlyField('ExistingEditor', '', _t('WikiPage.EXISTINGEDITOR', 'This page is currently locked for editing by ' . $existing['user'] . ' until ' . $existing['expires']))
 			);
 			$actions = new FieldSet();
 		} else {
 			$fields = new FieldSet();
 			$actions = new FieldSet(
-				new FormAction('startediting', _t('WikiPage.STARTEDIT','Edit Page'))
+							new FormAction('startediting', _t('WikiPage.STARTEDIT', 'Edit Page'))
 			);
 		}
 
@@ -741,8 +676,7 @@ class WikiPage_Controller extends Page_Controller implements PermissionProvider
 	 * 
 	 * @param <type> $data
 	 */
-	public function updatelock($data)
-	{
+	public function updatelock($data) {
 		if ($this->owner->ID && $this->owner->canEdit()) {
 			$lock = $this->getEditingLocks($this->owner, true);
 			$response = new stdClass();
@@ -750,12 +684,12 @@ class WikiPage_Controller extends Page_Controller implements PermissionProvider
 			if ($lock != null && $lock['user'] != Member::currentUser()->Email) {
 				// someone else has stolen it !
 				$response->status = 0;
-				$response->message = _t('WikiPage.LOCK_STOLEN', "Another user (".$lock['user'].") has forcefully taken this lock");
+				$response->message = _t('WikiPage.LOCK_STOLEN', "Another user (" . $lock['user'] . ") has forcefully taken this lock");
 			}
 			return Convert::raw2json($response);
 		}
 	}
-	
+
 	/**
 	 * Lock the page for editing
 	 * 
@@ -766,8 +700,7 @@ class WikiPage_Controller extends Page_Controller implements PermissionProvider
 	 * @return array
 	 * 			The names of any existing editors
 	 */
-	protected function getEditingLocks($page, $doLock=false)
-	{
+	protected function getEditingLocks($page, $doLock=false) {
 		$currentStage = Versioned::current_stage();
 
 		Versioned::reading_stage('Stage');
@@ -803,32 +736,28 @@ class WikiPage_Controller extends Page_Controller implements PermissionProvider
 		return $lock;
 	}
 
-
 	/**
 	 * Called to start editing this page
 	 * 
 	 */
-	public function startediting()
-	{
-		Director::redirect($this->owner->Link('edit').'?stage=Stage');
+	public function startediting() {
+		Director::redirect($this->owner->Link('edit') . '?stage=Stage');
 	}
-	
+
 	/**
 	 * Show the link selector
 	 * 
 	 * @return String
 	 */
-	public function linkselector()
-	{
+	public function linkselector() {
 		return $this->renderWith(array('LinkSelectDialog'));
 	}
-	
+
 	/**
 	 * What kind of linking is the link selection form doing
 	 * @return unknown_type
 	 */
-	public function LinkingType()
-	{
+	public function LinkingType() {
 		return isset($_GET['type']) ? $_GET['type'] : 'href';
 	}
 
@@ -836,22 +765,21 @@ class WikiPage_Controller extends Page_Controller implements PermissionProvider
 	 * 
 	 * @return Form
 	 */
-	public function LinkSelectForm()
-	{
+	public function LinkSelectForm() {
 		$type = isset($_GET['type']) ? $_GET['type'] : 'href';
 
 		$fields = new FieldSet(
-			new TreeDropdownField('TargetPage', _t('WikiPage.TARGETPAGE', 'Select Page'), 'SiteTree'),
-			new TreeDropdownField('TargetFile', _t('WikiPage.TARGETIMAGE', 'Select Image'), 'File')
-		);	
+						new TreeDropdownField('TargetPage', _t('WikiPage.TARGETPAGE', 'Select Page'), 'SiteTree'),
+						new TreeDropdownField('TargetFile', _t('WikiPage.TARGETIMAGE', 'Select Image'), 'File')
+		);
 
 		$actions = new FieldSet(
-			new FormAction('insert', _t('WikiPage.INSERTLINK','Insert'))
+						new FormAction('insert', _t('WikiPage.INSERTLINK', 'Insert'))
 		);
 
 		return new Form($this, 'LinkSelectForm', $fields, $actions);
 	}
-	
+
 	/**
 	 * Retrieves information about a selected image for the frontend
 	 * image insertion tool - hacky for now, ideally need to pull through the
@@ -859,19 +787,18 @@ class WikiPage_Controller extends Page_Controller implements PermissionProvider
 	 * 
 	 * @return string
 	 */
-	public function objectdetails()
-	{
+	public function objectdetails() {
 		$response = new stdClass;
 		if (isset($_GET['ID'])) {
 			$type = null;
 			if (isset($_GET['type'])) {
-				$type = $_GET['type'] == 'href' ? 'SiteTree' : 'File';	
+				$type = $_GET['type'] == 'href' ? 'SiteTree' : 'File';
 			} else {
 				$type = 'SiteTree';
 			}
 
 			$object = DataObject::get_by_id($type, $_GET['ID']);
-			
+
 			$response->Title = $object->Title;
 			$response->Link = $object->Link();
 
@@ -889,6 +816,7 @@ class WikiPage_Controller extends Page_Controller implements PermissionProvider
 		}
 		echo json_encode($response);
 	}
+
 }
 
 ?>

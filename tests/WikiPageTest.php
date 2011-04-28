@@ -27,7 +27,7 @@ class WikiPageTest extends SapphireTest
 	
 	function testParseNewPages()
 	{
-		$wp = new WikiPage();
+		$wp = new DummyWikiFormatter();
 		
 		$content = 'page content [[with a mix]] of good urls';
 		$newPages = $wp->parseNewPagesFrom($content);
@@ -83,5 +83,26 @@ class WikiPageTest extends SapphireTest
 	}
 }
 
+class DummyWikiFormatter extends SimpleWikiFormatter {
+	public function getFormatterName() {}
 
-?>
+	/**
+	 * Get the CMS field for editing this kind of element
+	 * @param DataObject $wikiPage
+	 * 			The page being edited
+	 */
+	public function getEditingField(DataObject $wikiPage) {}
+
+	/**
+	 * Format the content for output
+	 *
+	 * @param DataObject $wikiPage
+	 * 			The page being edited
+	 */
+	public function formatContent(DataObject $wikiPage) {}
+
+	/**
+	 * Get a URL that links to a page showing relevant help functionality
+	 */
+	public function getHelpUrl() {}
+}
