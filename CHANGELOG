@@ -1,3 +1,8 @@
+2011-04-28 v0.2.4
+----------------
+
+* Refactored page creation to be the responsibility of the relevant formatter
+
 Version 0.2.3
 2010-10-26
 
