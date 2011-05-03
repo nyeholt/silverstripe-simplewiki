@@ -10,6 +10,10 @@ class HTMLFormatter extends SimpleWikiFormatter {
 	public function getFormatterName() {
 		return "HTML";
 	}
+	
+	public function updateCMSFields($fields) {
+		// we don't want to change the field type for HTML
+	}
 
 	public function getEditingField(DataObject $wikiPage) {
 		return new HtmlEditorField('Content', '', 30, 20);

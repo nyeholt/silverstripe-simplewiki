@@ -57,6 +57,17 @@ abstract class SimpleWikiFormatter {
 
 		return $pages;
 	}
+	
+	/**
+	 * Allows a formatter to change the fields available in the backend for a wiki page. 
+	 *
+	 * @param FieldSet $fields 
+	 */
+	public function updateCMSFields($fields) {
+		// default behaviour is to change to a textarea - the HTML formatter type will 
+		// just override this behaviour
+		$fields->replaceField('Content', new TextareaField('Content', _t('WikiPage.CONTENT', 'Content'), 15));
+	}
 
 	/**
 	 * Gets the type of this formatter as a string

@@ -1,3 +1,9 @@
+2011-05-02 v0.2.5
+-----------------
+
+* Allow formatters to change fields used in the CMS. By default, the Content
+  field is replaced with a textarea.
+
 2011-04-28 v0.2.4
 ----------------
 
