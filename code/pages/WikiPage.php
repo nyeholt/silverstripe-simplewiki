@@ -271,6 +271,7 @@ class WikiPage_Controller extends Page_Controller implements PermissionProvider 
 		'delete',
 		'addpage',
 		'updatelock',
+		'livepreview'
 	);
 
 	public function init() {
@@ -352,11 +353,13 @@ class WikiPage_Controller extends Page_Controller implements PermissionProvider 
 
 
 		$fields = new FieldSet(
+						new LiteralField('Preview', '<div data-url="'.$this->Link('livepreview').'" id="editorPreview"></div>'),
 						$editorField,
 						new DropdownField('EditorType', _t('WikiPage.EDITORTYPE', 'Editor Type'), $this->data()->getEditorTypeOptions()),
 						new HiddenField('LockUpdate', '', $this->owner->Link('updatelock')),
 						new HiddenField('LockLength', '', WikiPage::$lock_time - 10)
 		);
+		
 
 		if ($helpLink) {
 			$fields->push(new LiteralField('HelpLink', '<a target="_blank" href="' . $helpLink . '">' . _t('WikiPage.EDITOR_HELP_LINK', 'Editor Help') . '</a>'));
@@ -798,6 +801,21 @@ class WikiPage_Controller extends Page_Controller implements PermissionProvider 
 			$response->message = "Invalid image ID";
 		}
 		echo json_encode($response);
+	}
+	
+	
+	public function livepreview()
+	{
+		$content = $_POST['content'];
+		
+		$formatter = $this->data()->getFormatter();
+		
+		if($formatter){
+			$content = $formatter->formatRaw($content);
+		}
+		
+		return $content;
+		
 	}
 
 }

@@ -19,8 +19,8 @@ class HTMLFormatter extends SimpleWikiFormatter {
 		return new HtmlEditorField('Content', '', 30, 20);
 	}
 
-	public function formatContent(DataObject $wikiPage) {
-		return $wikiPage->Content;
+	public function formatRaw($string) {
+		return $string;
 	}
 
 	public function getHelpUrl() {

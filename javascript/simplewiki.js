@@ -39,7 +39,44 @@
 				return false;
 			}
 		});
+		
+		var t;
+		
+		$('#Form_EditForm_Content').focus(function(){
+			setPreviewTimer();		
+		}).blur(function(){
+			clearTimeout(t);
+		});
+		
+		function setPreviewTimer(){
+			t = setTimeout(updatePreview,2000);	
+		}
+
+		function updatePreview(){
+			previewdiv = $('#editorPreview'); 
+			$.post(
+				previewdiv.attr('data-url'), 
+				{ 
+					content: $('#Form_EditForm_Content').val() 
+				},
+				function(data){
+					previewdiv.html(data)	
+				}
+			);
+			setPreviewTimer();
+		}
+
+		
+		
+		
+		
+		
+		
 
 
 	});
 })(jQuery);
+
+
+		
+		
