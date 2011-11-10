@@ -18,15 +18,17 @@ class WikiFormatter extends SimpleWikiFormatter {
 	}
 
 	public function formatRaw($string) {
+		
 		include_once SIMPLEWIKI_DIR . '/thirdparty/wikiparser-1.0/class_WikiParser.php';
 		$parser = &new WikiParser();
 		$parser->emphasis = array();
 		$parser->preformat = false;
+		
 		// need to change [] urls before parsing the text otherwise
 		// the wiki parser breaks...
-		$string = preg_replace('/\[sitetree_link id=(\d+)\]/', '|sitetree_link id=\\1|', $content);
+		$string = preg_replace('/\[sitetree_link id=(\d+)\]/', '|sitetree_link id=\\1|', $string);
 		$string = $parser->parse($string, '');
-		$string = preg_replace('/\|sitetree_link id=(\d+)\|/', '[sitetree_link id=\\1]', $content);
+		$string = preg_replace('/\|sitetree_link id=(\d+)\|/', '[sitetree_link id=\\1]', $string);
 
 		return $string;
 	}

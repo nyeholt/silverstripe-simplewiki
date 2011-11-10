@@ -40,38 +40,45 @@
 			}
 		});
 		
-		var t;
+		// preview stuff
 		
-		$('#Form_EditForm_Content').focus(function(){
-			setPreviewTimer();		
-		}).blur(function(){
-			clearTimeout(t);
-		});
+		if($('.markitup').length > 0){
+			var t;
+			var previewdiv = $('#editorPreview'); 
+			previewdiv.hide();
+			previewdiv.after('<div id="showPreview"><a href="#">show / hide preview</a></div>');
+			updatePreview(false);
+			
+			$('#showPreview a').click(function(){
+				previewdiv.toggle();
+				return false;
+			});
+			
+			$('#Form_EditForm_Content').focus(function(){
+				setPreviewTimer();		
+			}).blur(function(){
+				clearTimeout(t);
+			});
+		}
 		
 		function setPreviewTimer(){
-			t = setTimeout(updatePreview,2000);	
+			t = setTimeout(updatePreview,5000);	
 		}
 
-		function updatePreview(){
-			previewdiv = $('#editorPreview'); 
+		function updatePreview(repeat){
+			repeat = typeof(repeat) != 'undefined' ? repeat : true;
 			$.post(
 				previewdiv.attr('data-url'), 
-				{ 
-					content: $('#Form_EditForm_Content').val() 
-				},
+				{ content: $('#Form_EditForm_Content').val() },
 				function(data){
-					previewdiv.html(data)	
+					if(data) 
+						previewdiv.html(data);	
+					else 
+						previewdiv.html('error: no data');
 				}
 			);
-			setPreviewTimer();
+			if(repeat) setPreviewTimer();
 		}
-
-		
-		
-		
-		
-		
-		
 
 
 	});
