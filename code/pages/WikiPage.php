@@ -249,6 +249,31 @@ class WikiPage extends Page {
 		// save it with us as the editor
 		$this->write();
 	}
+	
+	public function LinkPickerForm()
+	{
+		$fields = new FieldSet(
+			new OptionsetField(
+		    	$name = "Type",
+		    	$title = "Link to a",
+		    	$source = array(
+		       		"page" => "Page on this site",
+		       		"file" => "File on this site",
+		       		"external" => "External URL"
+		   	 	),
+		   		$value = "page"
+		 	),
+			new TextField('Link', 'Link'),
+			new TextField('Title', 'Title')
+			
+		);
+		
+		$actions = new FieldSet(
+            //new FormAction('Submit', 'Submit')
+        );
+        
+		return new Form($this, "LinkPickerForm", $fields, $actions);
+	}
 
 }
 
@@ -271,7 +296,10 @@ class WikiPage_Controller extends Page_Controller implements PermissionProvider 
 		'delete',
 		'addpage',
 		'updatelock',
-		'livepreview'
+		'livepreview',
+		'imagepicker',
+		'linkpicker',
+		'linklist'
 	);
 
 	public function init() {
@@ -354,6 +382,7 @@ class WikiPage_Controller extends Page_Controller implements PermissionProvider 
 
 		$fields = new FieldSet(
 						new LiteralField('Preview', '<div data-url="'.$this->Link('livepreview').'" id="editorPreview"></div>'),
+						new LiteralField('DialogContent', '<div id="dialogContent" style="display:none;"></div>'),
 						$editorField,
 						new DropdownField('EditorType', _t('WikiPage.EDITORTYPE', 'Editor Type'), $this->data()->getEditorTypeOptions()),
 						new HiddenField('LockUpdate', '', $this->owner->Link('updatelock')),
@@ -815,6 +844,55 @@ class WikiPage_Controller extends Page_Controller implements PermissionProvider 
 		}
 		
 		return $content;
+		
+	}
+	
+	public function imagepicker(){
+		return $this->renderWith('ImagePickerDialog');
+	}
+	
+	public function linkpicker(){
+		return $this->renderWith(array('LinkPickerDialog'));
+	}
+	
+	public function linklist(){
+		$term = trim(Convert::raw2sql($this->request->getVar('term')));
+		$type = Convert::raw2sql($this->request->getVar('type'));
+		
+		if($type == 'file'){			
+			if($files = DataObject::get('File', $filter ="Title LIKE '%$term%'", $sort='Title DESC', $join='', $limit='')){
+				$this->response->addHeader('Content-type', 'application/json');
+				$return = array();
+				foreach ($files as $file){
+					if($file->ClassName == 'Image'){
+						$label = $file->CroppedImage(20,20)->forTemplate() . " " . $file->Title;
+					}else{
+						$label = "<img src='{$file->Icon()}' height='20' width = '20'/> " . $file->Title;
+					}
+					$return [] = array(
+						'ID' => $file->ID,
+						'Title' => $file->Title,
+						'Label' => $label,
+						'Link' => $file->Link()
+					); 
+				}
+				return Convert::raw2json($return);
+			}	
+		}elseif($type == 'page'){
+			if($pages = DataObject::get('SiteTree', $filter ="Title LIKE '%$term%'", $sort='Title DESC', $join='', $limit='')){
+				$this->response->addHeader('Content-type', 'application/json');
+				$return = array();
+				foreach ($pages as $page){
+					$return [] = array(
+						'ID' => $page->ID,
+						'Label' => $page->Title,
+						'Title' => $page->Title,
+						'Link' => $page->Link()
+					); 
+				}
+				return Convert::raw2json($return);
+			}
+		}
 		
 	}
 

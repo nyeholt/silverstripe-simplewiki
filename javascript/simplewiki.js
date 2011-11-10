@@ -1,3 +1,4 @@
+var controllerurl = location.pathname.replace(/edit$/, '').replace(/edit\/$/, '');
 
 (function ($) {
 	$().ready(function () {
@@ -79,10 +80,76 @@
 			);
 			if(repeat) setPreviewTimer();
 		}
+		
+		// Link and image dialogs
+		
+		
+		window.simpleWikiImageDialog = function(){
+		
+		}
+		
+		window.simpleWikiLinkDialog = function(){
+	
+			$("#dialogContent").load(controllerurl + '/linkpicker').dialog({
+		        title: "Insert a link",
+				modal: true,
+				autoOpen: true,
+				height: 500,
+				width: 500,
+				buttons: {
+					"Insert Link": function() {
+						if($('#Type input:radio:checked').val() == 'external'){
+							link = $('#Form_LinkPickerForm_Link').val();
+						}else{
+							link = $('#Form_LinkPickerForm_Link').attr('data-link');
+						}
+						title = '"' + $('#Form_LinkPickerForm_Title').val() + '"';
+						$.markItUp({openWith:'[', closeWith:'](' + link + ' ' + title + ')' } );
+						$( this ).dialog( "close" );
+						$('#Form_EditForm_Content').focus();
+					},
+					"Cancel": function() {
+						$( this ).dialog( "close" );
+						$('#Form_EditForm_Content').focus();
+					}	
+				}
+			});
+		}
+			
+		$( "#Form_LinkPickerForm_Link" ).livequery(function(){
+			if($('#Type input:radio:checked').val() != 'external'){
+				$(this).autocomplete({
+					source: function( request, response ) {
+						$.get(controllerurl + '/linklist', {term : request.term, type : $('#Type input:radio:checked').val()}, function(data){
+							if(data && data.length){
+								var items = [];
+								for (var id = 0; id < data.length; id++){
+									items.push({
+										label : data[id].Label,
+										value : data[id].Title,
+										id : data[id].ID,
+										link : data[id].Link
+									});
+								}
+								response(items);
+							}
+						});
+					},
+					minLength: 2,
+					select: function( event, ui ) {
+						$(this).val(ui.item.label);
+						$(this).attr('data-id', ui.item.id);
+						$(this).attr('data-link', ui.item.link);
+					}
+				});
+			}
+		});
 
 
 	});
 })(jQuery);
+
+
 
 
 		
