@@ -38,7 +38,7 @@ myMarkdownSettings = {
 		},
 		{name:'Link', key:'L',
 			beforeInsert:function(h) {
-				simpleWikiLinkDialog();
+				simpleWikiLinkDialog('markdown');
 			}
 			//openWith:'[', closeWith:']([![Url:!:http://]!] "[![Title]!]")', placeHolder:'Your text to link here...' },
 		},

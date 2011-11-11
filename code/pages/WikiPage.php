@@ -137,7 +137,7 @@ class WikiPage extends Page {
 	}
 
 	public function getEditorTypeOptions() {
-		$options = array('Inherit' => 'Inherit');
+		$options = array();
 		foreach (self::$registered_formatters as $fieldType) {
 			$options[$fieldType->getFormatterName()] = $fieldType->getFormatterName();
 		}
@@ -157,7 +157,7 @@ class WikiPage extends Page {
 		}
 
 		$parent = $this->getParent();
-		$editorType = 'HTML';
+		$editorType = 'Wiki';
 		while ($parent != null && $parent instanceof WikiPage) {
 			if ($parent->EditorType && $parent->EditorType != 'Inherit') {
 				return $parent->EditorType;
@@ -165,7 +165,7 @@ class WikiPage extends Page {
 			$parent = $parent->getParent();
 		}
 
-		return 'HTML';
+		return 'Wiki';
 	}
 
 	/**
@@ -258,12 +258,12 @@ class WikiPage extends Page {
 		    	$title = "Link to a",
 		    	$source = array(
 		       		"page" => "Page on this site",
-		       		"file" => "File on this site",
+		       		"file" => "File or image on this site",
 		       		"external" => "External URL"
 		   	 	),
 		   		$value = "page"
 		 	),
-			new TextField('Link', 'Link'),
+			new TextField('Link', 'Search by page title'),
 			new TextField('Title', 'Title')
 			
 		);
@@ -833,18 +833,12 @@ class WikiPage_Controller extends Page_Controller implements PermissionProvider 
 	}
 	
 	
-	public function livepreview()
-	{
+	public function livepreview(){
 		$content = $_POST['content'];
-		
-		$formatter = $this->data()->getFormatter();
-		
-		if($formatter){
+		if($formatter = $this->data()->getFormatter()){
 			$content = $formatter->formatRaw($content);
 		}
-		
 		return $content;
-		
 	}
 	
 	public function imagepicker(){

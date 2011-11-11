@@ -21,9 +21,9 @@ define('MANAGE_WIKI_PAGES', 'MANAGE_WIKI_PAGES');
 
 // Registration of wiki formatters
 WikiPage::register_formatter(new MarkdownFormatter());
-WikiPage::register_formatter(new HTMLFormatter());
+//WikiPage::register_formatter(new HTMLFormatter());
 WikiPage::register_formatter(new WikiFormatter());
-WikiPage::register_formatter(new PlainFormatter());
+//WikiPage::register_formatter(new PlainFormatter());
 
 // Example configuration options below
 /*

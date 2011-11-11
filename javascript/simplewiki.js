@@ -41,6 +41,7 @@ var controllerurl = location.pathname.replace(/edit$/, '').replace(/edit\/$/, ''
 			}
 		});
 		
+		
 		// preview stuff
 		
 		if($('.markitup').length > 0){
@@ -52,6 +53,7 @@ var controllerurl = location.pathname.replace(/edit$/, '').replace(/edit\/$/, ''
 			
 			$('#showPreview a').click(function(){
 				previewdiv.toggle();
+				$('#Form_EditForm_Content').focus();
 				return false;
 			});
 			
@@ -81,14 +83,17 @@ var controllerurl = location.pathname.replace(/edit$/, '').replace(/edit\/$/, ''
 			if(repeat) setPreviewTimer();
 		}
 		
-		// Link and image dialogs
 		
+		// image dialog window
 		
 		window.simpleWikiImageDialog = function(){
 		
 		}
 		
-		window.simpleWikiLinkDialog = function(){
+		
+		// link dialog window
+		
+		window.simpleWikiLinkDialog = function(editorType){
 	
 			$("#dialogContent").load(controllerurl + '/linkpicker').dialog({
 		        title: "Insert a link",
@@ -96,15 +101,45 @@ var controllerurl = location.pathname.replace(/edit$/, '').replace(/edit\/$/, ''
 				autoOpen: true,
 				height: 500,
 				width: 500,
+				open: function(event, ui){
+					// hide title field for wiki editor as it is not supported
+					if(editorType == 'wiki'){
+						$('#dialogContent #Title').livequery(function(){
+							$(this).hide();	
+						});
+					}
+				},
 				buttons: {
 					"Insert Link": function() {
+						link ='';
 						if($('#Type input:radio:checked').val() == 'external'){
 							link = $('#Form_LinkPickerForm_Link').val();
 						}else{
 							link = $('#Form_LinkPickerForm_Link').attr('data-link');
 						}
+						
+						// validate link selection
+						if(!link){
+							alert('Please select or insert a link');
+							$('#Form_LinkPickerForm_Link').focus();
+							return false;
+						}
+						
 						title = '"' + $('#Form_LinkPickerForm_Title').val() + '"';
-						$.markItUp({openWith:'[', closeWith:'](' + link + ' ' + title + ')' } );
+						if(editorType == 'markdown'){
+							$.markItUp({
+								openWith:'[', 
+								closeWith:'](' + link + ' ' + title + ')',
+								placeHolder:'Your text to link here...'
+							});
+						}else if(editorType == 'wiki'){
+							$.markItUp({
+								openWith:'[' + link + ' ', 
+								closeWith:']',
+								placeHolder:'Your text to link here...' 
+							});
+						}
+						
 						$( this ).dialog( "close" );
 						$('#Form_EditForm_Content').focus();
 					},
@@ -115,6 +150,9 @@ var controllerurl = location.pathname.replace(/edit$/, '').replace(/edit\/$/, ''
 				}
 			});
 		}
+		
+		
+		// autocomplete functionality for link field
 			
 		$( "#Form_LinkPickerForm_Link" ).livequery(function(){
 			if($('#Type input:radio:checked').val() != 'external'){
@@ -144,6 +182,41 @@ var controllerurl = location.pathname.replace(/edit$/, '').replace(/edit\/$/, ''
 				});
 			}
 		});
+		
+		
+		// update dialog link input field on link type radio button change
+		
+		$('#Type input:radio').live('change', function(){
+			type = $(this).val();
+			label = $('#Link label');
+			input = $('#Link input')
+			if(type == 'file'){
+				label.text('Search by file name');
+				input.val('');
+			}else if(type == 'external'){
+				label.text('Enter external link URL');
+				input.val('http://')
+			}else if(type == 'page'){
+				label.text('Search by page title');
+				input.val('')
+			}
+			input.focus();		
+		});
+		
+		
+		// warn about formatting issues before changing editor type
+		
+		origin = $('#Form_EditForm_EditorType option:selected').val();
+		$('#Form_EditForm_EditorType').change(function(){
+			if($('#Form_EditForm_Content').val().length >10){
+				choice = confirm('Changing the editor type with existing content can upset formatting. Change anyway?');
+				if(choice == true){
+					$('#Form_EditForm').submit();
+				}else{
+					$(this).val(origin);
+				}
+			}
+		});	
 
 
 	});
