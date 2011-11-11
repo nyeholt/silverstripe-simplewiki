@@ -1,1 +1,1 @@
-<h1>Choose Image, mate</h1>
+$ImagePickerForm

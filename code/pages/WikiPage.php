@@ -250,6 +250,10 @@ class WikiPage extends Page {
 		$this->write();
 	}
 	
+	
+	/*
+	 * Form for the insert link dialog box
+	 */
 	public function LinkPickerForm()
 	{
 		$fields = new FieldSet(
@@ -273,6 +277,36 @@ class WikiPage extends Page {
         );
         
 		return new Form($this, "LinkPickerForm", $fields, $actions);
+	}
+	
+	
+	/*
+	 * Form for the insert image dialog box
+	 */
+	public function ImagePickerForm()
+	{
+		$fields = new FieldSet(
+			new OptionsetField(
+		    	$name = "Type",
+		    	$title = "Image source",
+		    	$source = array(
+		    		"new" => "Upload from your computer",
+		       		"existing" => "Existing image in the file system"
+		   	 	),
+		   		$value = "new"
+		 	),
+			$ff = new FileField('NewImage', 'Upload image'),
+			new TextField('ExistingImage', 'Search by filename'),
+			new LiteralField('UploadingIcon', '<div id="uploadingIcon" style="display:none"><img src="simplewiki/images/loading.gif" /></div>')
+		);
+		
+		$ff->getValidator()->setAllowedMaxFileSize(3145728); // 3mb
+		
+		$actions = new FieldSet(
+            //new FormAction('Submit', 'Submit')
+        );
+        
+		return new Form($this, "ImagePickerForm", $fields, $actions);
 	}
 
 }
@@ -299,7 +333,8 @@ class WikiPage_Controller extends Page_Controller implements PermissionProvider 
 		'livepreview',
 		'imagepicker',
 		'linkpicker',
-		'linklist'
+		'linklist',
+		'imageupload'
 	);
 
 	public function init() {
@@ -853,8 +888,12 @@ class WikiPage_Controller extends Page_Controller implements PermissionProvider 
 		$term = trim(Convert::raw2sql($this->request->getVar('term')));
 		$type = Convert::raw2sql($this->request->getVar('type'));
 		
-		if($type == 'file'){			
-			if($files = DataObject::get('File', $filter ="Title LIKE '%$term%'", $sort='Title DESC', $join='', $limit='')){
+		if($type == 'file' || $type == 'image'){
+			$filter ="Title LIKE '%$term%'";
+			if($type == 'image'){
+				$filter .= " AND ClassName = 'Image'";
+			}		
+			if($files = DataObject::get('File', $filter, $sort='Title DESC', $join='', $limit='')){
 				$this->response->addHeader('Content-type', 'application/json');
 				$return = array();
 				foreach ($files as $file){
@@ -888,6 +927,42 @@ class WikiPage_Controller extends Page_Controller implements PermissionProvider 
 			}
 		}
 		
+	}
+	
+	/*
+	 * handles the upload of an image via ajax in the insert image dialog
+	 */
+	public function imageupload(){
+		if($tempfile = $_FILES['NewImage']){
+			
+			// validate //
+			
+			$maxsize = $_POST['MAX_FILE_SIZE'];
+			if($tempfile['size'] > $maxsize){
+				// file is too big
+				return false;
+			}
+			
+			$allowed = array('jpg', 'gif', 'png');
+			$ext = end(explode('.', $tempfile['name']));
+			if(!in_array(strtolower($ext), $allowed)){
+				throw new SS_HTTPResponse_Exception('File type not allowed.', 500);
+			}
+			
+			// upload //
+			
+			$upload	= new Upload;
+			$file = new File();
+			$upload->loadIntoFile($tempfile, $file, 'wikimages');
+			if($upload->isError()) 
+				return false;
+			$file = $upload->getFile();
+			return $file->Link();
+		
+		}else{
+		 	// no file to upload
+			return false;
+		}
 	}
 
 }

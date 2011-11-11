@@ -30,12 +30,15 @@ myMarkdownSettings = {
 			return markItUp.line+'. ';
 		}},
 		{separator:'---------------' },
+		//{name:'Pictures', key:'P', replaceWith:'![[![Alternative text]!]]([![Url:!:http://]!] "[![Title]!]")'},
+		
+		
 		{name:'Pictures', key:'P', 
 			beforeInsert:function(h) {
-				simpleWikiImageDialog();
+				simpleWikiImageDialog('markdown');
 			}
-			//replaceWith:'![[![Alternative text]!]]([![Url:!:http://]!] "[![Title]!]")'
 		},
+
 		{name:'Link', key:'L',
 			beforeInsert:function(h) {
 				simpleWikiLinkDialog('markdown');

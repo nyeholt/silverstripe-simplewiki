@@ -84,11 +84,129 @@ var controllerurl = location.pathname.replace(/edit$/, '').replace(/edit\/$/, ''
 		}
 		
 		
+		
+		
 		// image dialog window
 		
-		window.simpleWikiImageDialog = function(){
-		
+		window.simpleWikiImageDialog = function(editorType){
+			$("#dialogContent").load(controllerurl + '/imagepicker').dialog({
+		        title: "Insert am image",
+				modal: true,
+				autoOpen: true,
+				height: 500,
+				width: 500,
+				open: function(event, ui){
+					$('#ExistingImage').livequery(function(){
+					 	$(this).hide()
+					 });
+				},
+				buttons: {
+					"Insert / upload image": function() {
+						
+						type = $('#Type input:radio:checked').val();
+						if(type == 'new'){
+							if($('#Form_ImagePickerForm_NewImage').val().length > 0){
+								$('#Form_ImagePickerForm').ajaxSubmit({ 
+						        	//dataType:  'json',
+						        	beforeSubmit: function(){
+						        		$('#uploadingIcon').show();
+						        	},
+						        	
+						        	success: function(responseText, statusText, xhr, $form){
+						        		console.log();
+						        		if(statusText == 'success'){
+						        			alert('success');
+											$('#uploadingIcon').hide();
+											insertImageIntoEditor(responseText, editorType);
+										}
+						        	},
+						        	
+						        	error: function (jqXHR, textStatus, errorThrown){
+						        	
+						        		alert('Error: ' + errorThrown);
+						        		console.log(jqXHR);
+						        	},
+						        	
+						       		url: controllerurl + '/imageupload'
+						   		});
+							}else{
+								alert("Please select an image to upload");
+								return;
+							}
+						     
+    					}else{
+    						insertImageIntoEditor($("#Form_ImagePickerForm_ExistingImage").attr('data-link'), editorType);
+    					}
+						
+						$( this ).dialog( "close" );
+						$('#Form_EditForm_Content').focus();
+
+					},
+					"Cancel": function() {
+						$( this ).dialog( "close" );
+						$('#Form_EditForm_Content').focus();
+					}	
+				}
+			});
+
 		}
+		
+		function insertImageIntoEditor(link, editorType){
+			alt = 'althere';
+			title = '"titlehere"';
+			if(editorType == 'markdown'){
+				$.markItUp({replaceWith:'![' + alt + '](' + link + ' ' + title + ')'});
+			}else if(editorType == 'wiki'){
+				$.markItUp({replaceWith:'![' + alt + '](' + link + ' ' + title + ')'});
+			}
+		}
+		
+		
+		// autocomplete functionality for image field
+			
+		$( "#Form_ImagePickerForm_ExistingImage" ).livequery(function(){
+			$(this).autocomplete({
+				source: function( request, response ) {
+					$.get(controllerurl + '/linklist', {term : request.term, type : 'image'}, function(data){
+						if(data && data.length){
+							var items = [];
+							for (var id = 0; id < data.length; id++){
+								items.push({
+									label : data[id].Label,
+									value : data[id].Title,
+									id : data[id].ID,
+									link : data[id].Link
+								});
+							}
+							response(items);
+						}
+					});
+				},
+				minLength: 2,
+				select: function( event, ui ) {
+					$(this).val(ui.item.label);
+					$(this).attr('data-id', ui.item.id);
+					$(this).attr('data-link', ui.item.link);
+				}
+			});
+			
+		});
+		
+		
+		// update dialog image input field on image type radio button change
+		
+		$('#Form_ImagePickerForm #Type input:radio').live('change', function(){
+			type = $(this).val();
+			if(type == 'new'){
+				$('#NewImage').show().next().hide();
+			}else if(type == 'existing'){
+				$('#NewImage').hide().next().show();
+			}	
+		});
+		
+		$('#NewImage').live('change', function(){
+			
+		});
 		
 		
 		// link dialog window
@@ -125,8 +243,13 @@ var controllerurl = location.pathname.replace(/edit$/, '').replace(/edit\/$/, ''
 							return false;
 						}
 						
-						title = '"' + $('#Form_LinkPickerForm_Title').val() + '"';
 						if(editorType == 'markdown'){
+							if($('#Form_LinkPickerForm_Title').val()){
+								title = '"' + $('#Form_LinkPickerForm_Title').val() + '"';	
+							}else{
+								title = '';
+							}
+							
 							$.markItUp({
 								openWith:'[', 
 								closeWith:'](' + link + ' ' + title + ')',
@@ -186,19 +309,19 @@ var controllerurl = location.pathname.replace(/edit$/, '').replace(/edit\/$/, ''
 		
 		// update dialog link input field on link type radio button change
 		
-		$('#Type input:radio').live('change', function(){
+		$('#Form_LinkPickerForm #Type input:radio').live('change', function(){
 			type = $(this).val();
 			label = $('#Link label');
-			input = $('#Link input')
+			input = $('#Link input');
 			if(type == 'file'){
 				label.text('Search by file name');
 				input.val('');
 			}else if(type == 'external'){
 				label.text('Enter external link URL');
-				input.val('http://')
+				input.val('http://');
 			}else if(type == 'page'){
 				label.text('Search by page title');
-				input.val('')
+				input.val('');
 			}
 			input.focus();		
 		});
@@ -215,6 +338,8 @@ var controllerurl = location.pathname.replace(/edit$/, '').replace(/edit\/$/, ''
 				}else{
 					$(this).val(origin);
 				}
+			}else{
+				$('#Form_EditForm').submit();
 			}
 		});	
 
