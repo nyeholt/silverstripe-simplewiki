@@ -137,7 +137,7 @@ class WikiPage extends Page {
 	}
 
 	public function getEditorTypeOptions() {
-		$options = array('Inherit' => 'Inherit');
+		$options = array();
 		foreach (self::$registered_formatters as $fieldType) {
 			$options[$fieldType->getFormatterName()] = $fieldType->getFormatterName();
 		}
@@ -157,7 +157,7 @@ class WikiPage extends Page {
 		}
 
 		$parent = $this->getParent();
-		$editorType = 'HTML';
+		$editorType = 'Wiki';
 		while ($parent != null && $parent instanceof WikiPage) {
 			if ($parent->EditorType && $parent->EditorType != 'Inherit') {
 				return $parent->EditorType;
@@ -165,7 +165,7 @@ class WikiPage extends Page {
 			$parent = $parent->getParent();
 		}
 
-		return 'HTML';
+		return 'Wiki';
 	}
 
 	/**
@@ -249,6 +249,66 @@ class WikiPage extends Page {
 		// save it with us as the editor
 		$this->write();
 	}
+	
+	
+	/*
+	 * Form for the insert link dialog box
+	 */
+	public function LinkPickerForm()
+	{
+		$fields = new FieldSet(
+			new OptionsetField(
+		    	$name = "Type",
+		    	$title = "Link to a",
+		    	$source = array(
+		       		"page" => "Page on this site",
+		       		"file" => "File or image on this site",
+		       		"external" => "External URL"
+		   	 	),
+		   		$value = "page"
+		 	),
+			new TextField('Link', 'Search by page title'),
+			new TextField('Title', 'Title')
+			
+		);
+		
+		$actions = new FieldSet(
+            //new FormAction('Submit', 'Submit')
+        );
+        
+		return new Form($this, "LinkPickerForm", $fields, $actions);
+	}
+	
+	
+	/*
+	 * Form for the insert image dialog box
+	 */
+	public function ImagePickerForm()
+	{
+		$fields = new FieldSet(
+			new OptionsetField(
+		    	$name = "Type",
+		    	$title = "Image source",
+		    	$source = array(
+		    		"new" => "Upload from your computer",
+		       		"existing" => "Existing image in the file system"
+		   	 	),
+		   		$value = "new"
+		 	),
+			$ff = new FileField('NewImage', 'Upload image'),
+			new TextField('ExistingImage', 'Search by filename'),
+			new TextField('Title', 'Title'),
+			new LiteralField('UploadingIcon', '<div id="uploadingIcon" style="display:none"><img src="simplewiki/images/loading.gif" /></div>')
+		);
+		
+		$ff->getValidator()->setAllowedMaxFileSize(3145728); // 3mb
+		
+		$actions = new FieldSet(
+            //new FormAction('Submit', 'Submit')
+        );
+        
+		return new Form($this, "ImagePickerForm", $fields, $actions);
+	}
 
 }
 
@@ -271,6 +331,11 @@ class WikiPage_Controller extends Page_Controller implements PermissionProvider 
 		'delete',
 		'addpage',
 		'updatelock',
+		'livepreview',
+		'imagepicker',
+		'linkpicker',
+		'linklist',
+		'imageupload'
 	);
 
 	public function init() {
@@ -352,11 +417,14 @@ class WikiPage_Controller extends Page_Controller implements PermissionProvider 
 
 
 		$fields = new FieldSet(
+						new LiteralField('Preview', '<div data-url="'.$this->Link('livepreview').'" id="editorPreview"></div>'),
+						new LiteralField('DialogContent', '<div id="dialogContent" style="display:none;"></div>'),
 						$editorField,
 						new DropdownField('EditorType', _t('WikiPage.EDITORTYPE', 'Editor Type'), $this->data()->getEditorTypeOptions()),
 						new HiddenField('LockUpdate', '', $this->owner->Link('updatelock')),
 						new HiddenField('LockLength', '', WikiPage::$lock_time - 10)
 		);
+		
 
 		if ($helpLink) {
 			$fields->push(new LiteralField('HelpLink', '<a target="_blank" href="' . $helpLink . '">' . _t('WikiPage.EDITOR_HELP_LINK', 'Editor Help') . '</a>'));
@@ -798,6 +866,131 @@ class WikiPage_Controller extends Page_Controller implements PermissionProvider 
 			$response->message = "Invalid image ID";
 		}
 		echo json_encode($response);
+	}
+	
+	
+	/*
+	 * returns a formatted version of the users content field for preview
+	 */
+	public function livepreview(){
+		$content = $_POST['content'];
+		if($formatter = $this->data()->getFormatter()){
+			$content = $formatter->formatRaw($content);
+		}
+		return $content;
+	}
+	
+	
+	/*
+	 * returns the image picker form in template for dialog window
+	 */
+	public function imagepicker(){
+		return $this->renderWith('ImagePickerDialog');
+	}
+	
+	
+	/*
+	 * returns the link picker form in template for dialog window
+	 */
+	public function linkpicker(){
+		return $this->renderWith(array('LinkPickerDialog'));
+	}
+	
+	
+	/*
+	 * gets a list of files or pages for the dialogs autocomplete field
+	 */
+	public function linklist(){
+		$term = trim(Convert::raw2sql($this->request->getVar('term')));
+		$type = Convert::raw2sql($this->request->getVar('type'));
+		
+		if($type == 'file' || $type == 'image'){
+			$filter ="Title LIKE '%$term%'";
+			if($type == 'image'){
+				$filter .= " AND ClassName = 'Image'";
+			}		
+			if($files = DataObject::get('File', $filter, $sort='Title DESC', $join='', $limit='')){
+				//die($files->Count())
+				$this->response->addHeader('Content-type', 'application/json');
+				$return = array();
+				foreach ($files as $file){
+					if($file->ClassName == 'Image'){
+						$label = $file->CroppedImage(20,20)->forTemplate() . " " . $file->Title;
+					}else{
+						$label = "<img src='{$file->Icon()}' height='20' width = '20'/> " . $file->Title;
+					}
+					$return [] = array(
+						'ID' => $file->ID,
+						'Title' => $file->Title,
+						'Label' => $label,
+						'Link' => $file->Link()
+					); 
+				}
+				return Convert::raw2json($return);
+			}	
+		}elseif($type == 'page'){
+			if($pages = DataObject::get('SiteTree', $filter ="Title LIKE '%$term%'", $sort='Title DESC', $join='', $limit='')){
+				$this->response->addHeader('Content-type', 'application/json');
+				$return = array();
+				foreach ($pages as $page){
+					$return [] = array(
+						'ID' => $page->ID,
+						'Label' => $page->Title,
+						'Title' => $page->Title,
+						'Link' => $page->Link()
+					); 
+				}
+				return Convert::raw2json($return);
+			}
+		}
+		
+	}
+	
+	/*
+	 * handles the upload of an image via ajax in the insert image dialog
+	 */
+	public function imageupload(){
+		if($tempfile = $_FILES['NewImage']){
+			
+			// validate //
+			
+			$allowed = array('jpg', 'gif', 'png');
+			$ext = end(explode('.', $tempfile['name']));
+			if(!in_array(strtolower($ext), $allowed)){
+				$return = array(
+					'error' => 1,
+					'text' => "Your image must be in jpg, gif or png format"
+				);
+				return Convert::raw2json($return);
+			}
+			
+			$maxsize = $_POST['MAX_FILE_SIZE'];
+			if($tempfile['size'] > $maxsize){
+				$size = number_format($maxsize / 1024 / 1024, 2) . 'MB'; 
+				$return = array(
+					'error' => 1,
+					'text' => "Your image must be smaller than $size"
+				);
+				return Convert::raw2json($return);
+			}
+			
+			// upload //
+			
+			$upload	= new Upload;
+			$file = new Image();
+			$upload->loadIntoFile($tempfile, $file);
+			if($upload->isError()) 
+				return false;
+			$file = $upload->getFile();
+			$return =  array(
+				'link' => $file->Link()
+			);
+			return Convert::raw2json($return);
+		
+		}else{
+		 	// no file to upload
+			return false;
+		}
 	}
 
 }

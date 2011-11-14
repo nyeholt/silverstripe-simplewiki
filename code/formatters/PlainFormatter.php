@@ -17,8 +17,8 @@ class PlainFormatter extends SimpleWikiFormatter
 	}
 
 
-	public function formatContent(DataObject $wikiPage) {
-		return $wikiPage->Content;
+	public function formatRaw($string) {
+		return $string;
 	}
 
 	public function getHelpUrl() {

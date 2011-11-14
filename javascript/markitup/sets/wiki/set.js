@@ -21,8 +21,19 @@ myWikiSettings = {
         {name:'Bulleted list', openWith:'(!(* |!|*)!)'}, 
         {name:'Numeric list', openWith:'(!(# |!|#)!)'}, 
         {separator:'---------------' },
-        {name:'Picture', key:'P', replaceWith:'[[Image:[![Url:!:http://]!]|[![name]!]]]'}, 
-        {name:'Link', key:'L', openWith:'[[![Link]!] ', closeWith:']', placeHolder:'Your text to link here...' },
+        //{name:'Picture', key:'P', replaceWith:'[[Image:[![Url:!:http://]!]|[![name]!]]]'}, 
+        {name:'Picture', key:'P',
+			beforeInsert:function(h) {
+				simpleWikiImageDialog('wiki');
+			}
+		},
+        //{name:'Link', key:'L', openWith:'[[![Link]!] ', closeWith:']', placeHolder:'Your text to link here...' },
+        {name:'Link', key:'L',
+			beforeInsert:function(h) {
+				simpleWikiLinkDialog('wiki');
+			}
+		},
+        
         {name:'Url', openWith:'[[![Url:!:http://]!] ', closeWith:']', placeHolder:'Your text to link here...' },
         {separator:'---------------' },
         {name:'Quotes', openWith:'(!(> |!|>)!)'},

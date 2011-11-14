@@ -10,7 +10,7 @@ if (($SIMPLEWIKI_EDITING_MODULE = basename(dirname(__FILE__))) != 'simplewiki') 
 	die("The SimpleWiki module MUST be in the /simplewiki directory, not $SIMPLEWIKI_EDITING_MODULE");
 }
 
-HtmlEditorConfig::get('default')->enablePlugins(array('sslinks' => '../../../simplewiki/javascript/sslinks/editor_plugin_src.js'));
+//HtmlEditorConfig::get('default')->enablePlugins(array('sslinks' => '../../../simplewiki/javascript/sslinks/editor_plugin_src.js'));
 HtmlEditorConfig::get('default')->insertButtonsBefore('advcode', 'ss_simplelink', 'unlink', 'ss_simpleimage');
 
 // PERMISSION CONSTANTS
@@ -21,9 +21,9 @@ define('MANAGE_WIKI_PAGES', 'MANAGE_WIKI_PAGES');
 
 // Registration of wiki formatters
 WikiPage::register_formatter(new MarkdownFormatter());
-WikiPage::register_formatter(new HTMLFormatter());
+//WikiPage::register_formatter(new HTMLFormatter());
 WikiPage::register_formatter(new WikiFormatter());
-WikiPage::register_formatter(new PlainFormatter());
+//WikiPage::register_formatter(new PlainFormatter());
 
 // Example configuration options below
 /*
