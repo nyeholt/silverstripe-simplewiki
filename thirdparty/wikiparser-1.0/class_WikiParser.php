@@ -38,8 +38,8 @@ class WikiParser {
 	
 	function WikiParser() {
 		$this->reference_wiki = '';
-		$this->image_uri = '';
-		$this->ignore_images = true;
+		$this->image_uri = true;
+		$this->ignore_images = false;
 	}
 	
 	function handle_sections($matches) {
@@ -154,7 +154,7 @@ class WikiParser {
 		if ($this->ignore_images) return "";
 		if (!$this->image_uri) return $title;
 		
-		$href = $this->image_uri . $href;
+		//$href = $this->image_uri . $href;
 		
 		$imagetag = sprintf(
 			'<img src="%s" alt="%s" />',

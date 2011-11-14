@@ -102,45 +102,44 @@ var controllerurl = location.pathname.replace(/edit$/, '').replace(/edit\/$/, ''
 				},
 				buttons: {
 					"Insert / upload image": function() {
-						
+						$this = $(this);
 						type = $('#Type input:radio:checked').val();
+						title = $('#Form_ImagePickerForm_Title').val();
 						if(type == 'new'){
 							if($('#Form_ImagePickerForm_NewImage').val().length > 0){
 								$('#Form_ImagePickerForm').ajaxSubmit({ 
-						        	//dataType:  'json',
+						        	dataType:  'json',
+						        	url: controllerurl + '/imageupload',
 						        	beforeSubmit: function(){
 						        		$('#uploadingIcon').show();
 						        	},
-						        	
-						        	success: function(responseText, statusText, xhr, $form){
-						        		console.log();
-						        		if(statusText == 'success'){
-						        			alert('success');
-											$('#uploadingIcon').hide();
-											insertImageIntoEditor(responseText, editorType);
+						        	success: function(data){
+						        		// validate									
+										if(data.error){
+						        			$('#uploadingIcon').hide();
+						        			$('#Form_ImagePickerForm_NewImage').val('');
+						        			alert(data.text);
+						        			return false;
+										}else{
+											insertImageIntoEditor(data.link, title, editorType);
+											$this.dialog( "close" );
+											$('#Form_EditForm_Content').focus();
 										}
-						        	},
-						        	
-						        	error: function (jqXHR, textStatus, errorThrown){
-						        	
-						        		alert('Error: ' + errorThrown);
-						        		console.log(jqXHR);
-						        	},
-						        	
-						       		url: controllerurl + '/imageupload'
+						        	}
+						       		
 						   		});
 							}else{
 								alert("Please select an image to upload");
+								$( this ).dialog( "close" );
+								$('#Form_EditForm_Content').focus();
 								return;
 							}
 						     
     					}else{
-    						insertImageIntoEditor($("#Form_ImagePickerForm_ExistingImage").attr('data-link'), editorType);
+    						insertImageIntoEditor($("#Form_ImagePickerForm_ExistingImage").attr('data-link'), title, editorType);
+    						$( this ).dialog( "close" );
+							$('#Form_EditForm_Content').focus();
     					}
-						
-						$( this ).dialog( "close" );
-						$('#Form_EditForm_Content').focus();
-
 					},
 					"Cancel": function() {
 						$( this ).dialog( "close" );
@@ -151,13 +150,12 @@ var controllerurl = location.pathname.replace(/edit$/, '').replace(/edit\/$/, ''
 
 		}
 		
-		function insertImageIntoEditor(link, editorType){
-			alt = 'althere';
-			title = '"titlehere"';
+		function insertImageIntoEditor(link, title, editorType){
 			if(editorType == 'markdown'){
-				$.markItUp({replaceWith:'![' + alt + '](' + link + ' ' + title + ')'});
+				title = title ? '"' + title + '"' : '';
+				$.markItUp({replaceWith:'![' + title + '](' + link + ' ' + title + ')'});
 			}else if(editorType == 'wiki'){
-				$.markItUp({replaceWith:'![' + alt + '](' + link + ' ' + title + ')'});
+				$.markItUp({replaceWith:'[[Image:' + link + '|' + title + ']]'});
 			}
 		}
 		

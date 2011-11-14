@@ -297,6 +297,7 @@ class WikiPage extends Page {
 		 	),
 			$ff = new FileField('NewImage', 'Upload image'),
 			new TextField('ExistingImage', 'Search by filename'),
+			new TextField('Title', 'Title'),
 			new LiteralField('UploadingIcon', '<div id="uploadingIcon" style="display:none"><img src="simplewiki/images/loading.gif" /></div>')
 		);
 		
@@ -868,6 +869,9 @@ class WikiPage_Controller extends Page_Controller implements PermissionProvider 
 	}
 	
 	
+	/*
+	 * returns a formatted version of the users content field for preview
+	 */
 	public function livepreview(){
 		$content = $_POST['content'];
 		if($formatter = $this->data()->getFormatter()){
@@ -876,14 +880,26 @@ class WikiPage_Controller extends Page_Controller implements PermissionProvider 
 		return $content;
 	}
 	
+	
+	/*
+	 * returns the image picker form in template for dialog window
+	 */
 	public function imagepicker(){
 		return $this->renderWith('ImagePickerDialog');
 	}
 	
+	
+	/*
+	 * returns the link picker form in template for dialog window
+	 */
 	public function linkpicker(){
 		return $this->renderWith(array('LinkPickerDialog'));
 	}
 	
+	
+	/*
+	 * gets a list of files or pages for the dialogs autocomplete field
+	 */
 	public function linklist(){
 		$term = trim(Convert::raw2sql($this->request->getVar('term')));
 		$type = Convert::raw2sql($this->request->getVar('type'));
@@ -894,6 +910,7 @@ class WikiPage_Controller extends Page_Controller implements PermissionProvider 
 				$filter .= " AND ClassName = 'Image'";
 			}		
 			if($files = DataObject::get('File', $filter, $sort='Title DESC', $join='', $limit='')){
+				//die($files->Count())
 				$this->response->addHeader('Content-type', 'application/json');
 				$return = array();
 				foreach ($files as $file){
@@ -937,27 +954,38 @@ class WikiPage_Controller extends Page_Controller implements PermissionProvider 
 			
 			// validate //
 			
-			$maxsize = $_POST['MAX_FILE_SIZE'];
-			if($tempfile['size'] > $maxsize){
-				// file is too big
-				return false;
-			}
-			
 			$allowed = array('jpg', 'gif', 'png');
 			$ext = end(explode('.', $tempfile['name']));
 			if(!in_array(strtolower($ext), $allowed)){
-				throw new SS_HTTPResponse_Exception('File type not allowed.', 500);
+				$return = array(
+					'error' => 1,
+					'text' => "Your image must be in jpg, gif or png format"
+				);
+				return Convert::raw2json($return);
+			}
+			
+			$maxsize = $_POST['MAX_FILE_SIZE'];
+			if($tempfile['size'] > $maxsize){
+				$size = number_format($maxsize / 1024 / 1024, 2) . 'MB'; 
+				$return = array(
+					'error' => 1,
+					'text' => "Your image must be smaller than $size"
+				);
+				return Convert::raw2json($return);
 			}
 			
 			// upload //
 			
 			$upload	= new Upload;
-			$file = new File();
-			$upload->loadIntoFile($tempfile, $file, 'wikimages');
+			$file = new Image();
+			$upload->loadIntoFile($tempfile, $file);
 			if($upload->isError()) 
 				return false;
 			$file = $upload->getFile();
-			return $file->Link();
+			$return =  array(
+				'link' => $file->Link()
+			);
+			return Convert::raw2json($return);
 		
 		}else{
 		 	// no file to upload
