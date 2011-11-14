@@ -84,14 +84,18 @@ class WikiPageTest extends SapphireTest
 }
 
 class DummyWikiFormatter extends SimpleWikiFormatter {
-	public function getFormatterName() {}
+	public function getFormatterName(){
+		return "Dummy";
+	}
 
 	/**
 	 * Get the CMS field for editing this kind of element
 	 * @param DataObject $wikiPage
 	 * 			The page being edited
 	 */
-	public function getEditingField(DataObject $wikiPage) {}
+	public function getEditingField(DataObject $wikiPage){
+	
+	}
 
 	/**
 	 * Format the content for output
@@ -99,10 +103,14 @@ class DummyWikiFormatter extends SimpleWikiFormatter {
 	 * @param DataObject $wikiPage
 	 * 			The page being edited
 	 */
-	public function formatContent(DataObject $wikiPage) {}
+	public function formatRaw($string){
+	
+	}
 
 	/**
 	 * Get a URL that links to a page showing relevant help functionality
 	 */
-	public function getHelpUrl() {}
+	public function getHelpUrl() {
+	
+	}
 }
