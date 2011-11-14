@@ -90,7 +90,7 @@ var controllerurl = location.pathname.replace(/edit$/, '').replace(/edit\/$/, ''
 		
 		window.simpleWikiImageDialog = function(editorType){
 			$("#dialogContent").load(controllerurl + '/imagepicker').dialog({
-		        title: "Insert am image",
+		        title: "Insert an image",
 				modal: true,
 				autoOpen: true,
 				height: 500,
