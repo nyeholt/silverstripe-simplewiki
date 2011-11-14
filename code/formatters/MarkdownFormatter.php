@@ -24,11 +24,9 @@ class MarkdownFormatter extends SimpleWikiFormatter {
 		return new MarkItUpField('Content', '', 'markdown', 30, 20);
 	}
 
-	public function formatContent(DataObject $wikiPage) {
-		$content = $wikiPage->Content;
-
+	public function formatRaw($string) {
 		include_once SIMPLEWIKI_DIR . '/thirdparty/php-markdown-extra-1.2.4/markdown.php';
-		return Markdown($content);
+		return Markdown($string);
 	}
 
 	public function getHelpUrl() {

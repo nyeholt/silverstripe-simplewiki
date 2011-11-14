@@ -38,7 +38,22 @@ class MarkItUpField extends TextareaField
 	public static function include_js($type) {
 		Requirements::javascript('jsparty/jquery/jquery.js');
 		Requirements::javascript('jsparty/jquery/jquery_improvements.js');
+		Requirements::javascript('sapphire/thirdparty/jquery-livequery/jquery.livequery.js');
+		Requirements::javascript('sapphire/thirdparty/jquery-ui/jquery.ui.core.js');
+		Requirements::javascript('sapphire/thirdparty/jquery-ui/jquery.ui.position.js');
+		Requirements::javascript('sapphire/thirdparty/jquery-ui/jquery.ui.widget.js');
+		Requirements::javascript('sapphire/thirdparty/jquery-ui/jquery.ui.mouse.js');
+		Requirements::javascript('sapphire/thirdparty/jquery-ui/jquery.ui.draggable.js');
+		Requirements::javascript('sapphire/thirdparty/jquery-ui/jquery.ui.dialog.js');
+		Requirements::javascript('sapphire/thirdparty/jquery-ui/jquery.ui.autocomplete.js');
+		Requirements::javascript('sapphire/thirdparty/jquery-form/jquery.form.js');
+		
 		Requirements::javascript('simplewiki/javascript/markitup/jquery.markitup.js');
+		
+		Requirements::css('sapphire/thirdparty/jquery-ui-themes/base/jquery.ui.all.css');
+		Requirements::css('sapphire/thirdparty/jquery-ui-themes/base/jquery.ui.theme.css');
+		Requirements::css('sapphire/thirdparty/jquery-ui-themes/base/jquery.ui.dialog.css');
+		Requirements::css('sapphire/thirdparty/jquery-ui-themes/base/jquery.ui.autocomplete.css');
 		Requirements::css('simplewiki/javascript/markitup/skins/markitup/style.css', 'all');
 
 		switch ($type) {

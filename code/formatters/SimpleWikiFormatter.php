@@ -87,7 +87,11 @@ abstract class SimpleWikiFormatter {
 	 * @param DataObject $wikiPage
 	 * 			The page being edited
 	 */
-	public abstract function formatContent(DataObject $wikiPage);
+	public function formatContent(DataObject $wikiPage){
+		return $this->formatRaw($wikiPage->Content);
+	}
+	
+	public abstract function formatRaw($string);
 
 	/**
 	 * Get a URL that links to a page showing relevant help functionality
