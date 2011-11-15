@@ -44,43 +44,46 @@ var controllerurl = location.pathname.replace(/edit$/, '').replace(/edit\/$/, ''
 		
 		// preview stuff
 		
+		var previewdiv = $('#editorPreview'); 
+		
+		//initial preview load
+		var updateFlag = true;
+		updatePreview();
+		updateFlag = false;
+		
+		var t = setInterval(updatePreview,5000);
+			
+		$('#Form_EditForm_Content').keyup(function(){
+			updateFlag = true;		
+		});
+		
 		if($('.markitup').length > 0){
-			var t;
-			var previewdiv = $('#editorPreview'); 
 			previewdiv.hide();
 			previewdiv.after('<div id="showPreview"><a href="#">show / hide preview</a></div>');
-			updatePreview(false);
+			updatePreview();
 			
 			$('#showPreview a').click(function(){
 				previewdiv.toggle();
 				$('#Form_EditForm_Content').focus();
 				return false;
 			});
-			
-			$('#Form_EditForm_Content').focus(function(){
-				setPreviewTimer();		
-			}).blur(function(){
-				clearTimeout(t);
-			});
 		}
 		
-		function setPreviewTimer(){
-			t = setTimeout(updatePreview,5000);	
-		}
-
-		function updatePreview(repeat){
-			repeat = typeof(repeat) != 'undefined' ? repeat : true;
-			$.post(
-				previewdiv.attr('data-url'), 
-				{ content: $('#Form_EditForm_Content').val() },
-				function(data){
-					if(data) 
-						previewdiv.html(data);	
-					else 
-						previewdiv.html('error: no data');
-				}
-			);
-			if(repeat) setPreviewTimer();
+		function updatePreview(){
+			if(updateFlag){
+				$.post(
+					previewdiv.attr('data-url'), 
+					{ content: $('#Form_EditForm_Content').val() },
+					function(data){
+						if(data){
+							if(previewdiv.html() != data){
+								previewdiv.html(data);
+								updateFlag = false;
+							}
+						}		
+					}
+				);
+			}
 		}
 		
 		
@@ -124,14 +127,15 @@ var controllerurl = location.pathname.replace(/edit$/, '').replace(/edit\/$/, ''
 											insertImageIntoEditor(data.link, title, editorType);
 											$this.dialog( "close" );
 											$('#Form_EditForm_Content').focus();
+											updateFlag = true;	
+											updatePreview();
+											
 										}
 						        	}
 						       		
 						   		});
 							}else{
 								alert("Please select an image to upload");
-								$( this ).dialog( "close" );
-								$('#Form_EditForm_Content').focus();
 								return;
 							}
 						     
@@ -139,6 +143,8 @@ var controllerurl = location.pathname.replace(/edit$/, '').replace(/edit\/$/, ''
     						insertImageIntoEditor($("#Form_ImagePickerForm_ExistingImage").attr('data-link'), title, editorType);
     						$( this ).dialog( "close" );
 							$('#Form_EditForm_Content').focus();
+							updateFlag = true;	
+							updatePreview();
     					}
 					},
 					"Cancel": function() {
@@ -260,6 +266,9 @@ var controllerurl = location.pathname.replace(/edit$/, '').replace(/edit\/$/, ''
 								placeHolder:'Your text to link here...' 
 							});
 						}
+						
+						updateFlag = true;	
+						updatePreview();
 						
 						$( this ).dialog( "close" );
 						$('#Form_EditForm_Content').focus();
