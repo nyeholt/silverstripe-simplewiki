@@ -954,7 +954,7 @@ class WikiPage_Controller extends Page_Controller implements PermissionProvider 
 			
 			// validate //
 			
-			$allowed = array('jpg', 'gif', 'png');
+			$allowed = array('jpg', 'jpeg', 'gif', 'png', 'ico');
 			$ext = end(explode('.', $tempfile['name']));
 			if(!in_array(strtolower($ext), $allowed)){
 				$return = array(
