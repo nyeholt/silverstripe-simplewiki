@@ -915,7 +915,11 @@ class WikiPage_Controller extends Page_Controller implements PermissionProvider 
 				$return = array();
 				foreach ($files as $file){
 					if($file->ClassName == 'Image'){
-						$label = $file->CroppedImage(20,20)->forTemplate() . " " . $file->Title;
+						if($file->CroppedImage(20,20)){
+							$label = $file->CroppedImage(20,20)->forTemplate() . " " . $file->Title;
+						}else{
+							$label = "<img src='{$file->Link()}' height='20' width = '20'/> " . $file->Title;
+						}
 					}else{
 						$label = "<img src='{$file->Icon()}' height='20' width = '20'/> " . $file->Title;
 					}
