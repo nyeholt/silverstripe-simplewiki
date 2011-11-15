@@ -44,43 +44,49 @@ var controllerurl = location.pathname.replace(/edit$/, '').replace(/edit\/$/, ''
 		
 		// preview stuff
 		
+		var previewdiv = $('#editorPreview'); 
+		
+		//initial preview load
+		var updateFlag = true;
+		updatePreview();
+		updateFlag = false;
+		
+		var t = setInterval(updatePreview,5000);
+			
+		$('#Form_EditForm_Content').keyup(function(){
+			updateFlag = true;		
+		});
+		
 		if($('.markitup').length > 0){
-			var t;
-			var previewdiv = $('#editorPreview'); 
 			previewdiv.hide();
 			previewdiv.after('<div id="showPreview"><a href="#">show / hide preview</a></div>');
-			updatePreview(false);
+			updatePreview();
 			
 			$('#showPreview a').click(function(){
 				previewdiv.toggle();
 				$('#Form_EditForm_Content').focus();
 				return false;
 			});
-			
-			$('#Form_EditForm_Content').focus(function(){
-				setPreviewTimer();		
-			}).blur(function(){
-				clearTimeout(t);
-			});
 		}
 		
-		function setPreviewTimer(){
-			t = setTimeout(updatePreview,5000);	
-		}
-
-		function updatePreview(repeat){
-			repeat = typeof(repeat) != 'undefined' ? repeat : true;
-			$.post(
-				previewdiv.attr('data-url'), 
-				{ content: $('#Form_EditForm_Content').val() },
-				function(data){
-					if(data) 
-						previewdiv.html(data);	
-					else 
-						previewdiv.html('error: no data');
-				}
-			);
-			if(repeat) setPreviewTimer();
+		function updatePreview(){
+			if(updateFlag){
+				$.post(
+					previewdiv.attr('data-url'), 
+					{ content: $('#Form_EditForm_Content').val() },
+					function(data){
+						if(data){
+							if(previewdiv.html() != data){
+								previewdiv.html(data);
+							}
+						}else{ 
+							previewdiv.html('error: no data'); 
+						}		
+						
+					}
+				);
+				updateFlag = false;
+			}
 		}
 		
 		
@@ -281,6 +287,7 @@ var controllerurl = location.pathname.replace(/edit$/, '').replace(/edit\/$/, ''
 					source: function( request, response ) {
 						$.get(controllerurl + '/linklist', {term : request.term, type : $('#Type input:radio:checked').val()}, function(data){
 							if(data && data.length){
+								console.log(data);
 								var items = [];
 								for (var id = 0; id < data.length; id++){
 									items.push({
