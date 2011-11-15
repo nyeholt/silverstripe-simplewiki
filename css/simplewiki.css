@@ -1,4 +1,4 @@
-
+	
 form fieldset { border: none; }
 
 form .Actions { margin-top: 10px; }
@@ -271,4 +271,10 @@ form .Actions { margin-top: 10px; }
 #dialogContent input.action:focus {
 	background: #5694BF;
 	cursor: pointer;
+}
+
+#editorPreview{
+	height: 300px;
+	overflow: auto;
+	border: 1px solid #DDD;
 }
