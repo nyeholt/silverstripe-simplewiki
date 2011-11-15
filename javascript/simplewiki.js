@@ -78,14 +78,11 @@ var controllerurl = location.pathname.replace(/edit$/, '').replace(/edit\/$/, ''
 						if(data){
 							if(previewdiv.html() != data){
 								previewdiv.html(data);
+								updateFlag = false;
 							}
-						}else{ 
-							previewdiv.html('error: no data'); 
 						}		
-						
 					}
 				);
-				updateFlag = false;
 			}
 		}
 		
@@ -130,14 +127,15 @@ var controllerurl = location.pathname.replace(/edit$/, '').replace(/edit\/$/, ''
 											insertImageIntoEditor(data.link, title, editorType);
 											$this.dialog( "close" );
 											$('#Form_EditForm_Content').focus();
+											updateFlag = true;	
+											updatePreview();
+											
 										}
 						        	}
 						       		
 						   		});
 							}else{
 								alert("Please select an image to upload");
-								$( this ).dialog( "close" );
-								$('#Form_EditForm_Content').focus();
 								return;
 							}
 						     
@@ -145,6 +143,8 @@ var controllerurl = location.pathname.replace(/edit$/, '').replace(/edit\/$/, ''
     						insertImageIntoEditor($("#Form_ImagePickerForm_ExistingImage").attr('data-link'), title, editorType);
     						$( this ).dialog( "close" );
 							$('#Form_EditForm_Content').focus();
+							updateFlag = true;	
+							updatePreview();
     					}
 					},
 					"Cancel": function() {
@@ -267,6 +267,9 @@ var controllerurl = location.pathname.replace(/edit$/, '').replace(/edit\/$/, ''
 							});
 						}
 						
+						updateFlag = true;	
+						updatePreview();
+						
 						$( this ).dialog( "close" );
 						$('#Form_EditForm_Content').focus();
 					},
@@ -287,7 +290,6 @@ var controllerurl = location.pathname.replace(/edit$/, '').replace(/edit\/$/, ''
 					source: function( request, response ) {
 						$.get(controllerurl + '/linklist', {term : request.term, type : $('#Type input:radio:checked').val()}, function(data){
 							if(data && data.length){
-								console.log(data);
 								var items = [];
 								for (var id = 0; id < data.length; id++){
 									items.push({
