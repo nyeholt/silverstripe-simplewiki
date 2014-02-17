@@ -7,7 +7,7 @@ var controllerurl = location.pathname.replace(/edit$/, '').replace(/edit\/$/, ''
 		$('#Form_StatusForm_action_startediting').attr('accesskey', 's');
 
 		// add the lock update ping
-		var timeout = $('#Form_EditForm_LockLength').val() ? $('#Form_EditForm_LockLength').val() * 1000 : 300000;
+		var timeout = $('#Form_EditForm_LockLength').val() > 5 ? $('#Form_EditForm_LockLength').val() * 1000 : 300000;
 
 		if (timeout) {
 			setInterval(function () {
@@ -15,8 +15,6 @@ var controllerurl = location.pathname.replace(/edit$/, '').replace(/edit\/$/, ''
 				$.post(url);
 			}, timeout);
 		}
-
-		$('#Form_EditForm_LockUpdate')
 
 		// toggle the new page form
 		var createPageForm = $('#Form_CreatePageForm').hide();
@@ -85,10 +83,6 @@ var controllerurl = location.pathname.replace(/edit$/, '').replace(/edit\/$/, ''
 				);
 			}
 		}
-		
-		
-		
-		
 		// image dialog window
 		
 		window.simpleWikiImageDialog = function(editorType){
@@ -99,9 +93,7 @@ var controllerurl = location.pathname.replace(/edit$/, '').replace(/edit\/$/, ''
 				height: 500,
 				width: 500,
 				open: function(event, ui){
-					$('#ExistingImage').livequery(function(){
-					 	$(this).hide()
-					 });
+					$('#ExistingImage').hide();
 				},
 				buttons: {
 					"Insert / upload image": function() {
@@ -168,32 +160,39 @@ var controllerurl = location.pathname.replace(/edit$/, '').replace(/edit\/$/, ''
 		
 		// autocomplete functionality for image field
 			
-		$( "#Form_ImagePickerForm_ExistingImage" ).livequery(function(){
-			$(this).autocomplete({
-				source: function( request, response ) {
-					$.get(controllerurl + '/linklist', {term : request.term, type : 'image'}, function(data){
-						if(data && data.length){
-							var items = [];
-							for (var id = 0; id < data.length; id++){
-								items.push({
-									label : data[id].Label,
-									value : data[id].Title,
-									id : data[id].ID,
-									link : data[id].Link
-								});
+		$("#Form_ImagePickerForm_ExistingImage" ).entwine({
+			onmatch: function () {
+				$(this).autocomplete({
+					source: function( request, response ) {
+						$.get(controllerurl + '/linklist', {term : request.term, type : 'image'}, function(data){
+							if(data && data.length){
+								var items = [];
+								for (var id = 0; id < data.length; id++){
+									items.push({
+										label : data[id].Label,
+										value : data[id].Title,
+										id : data[id].ID,
+										link : data[id].Link
+									});
+								}
+								response(items);
 							}
-							response(items);
-						}
-					});
-				},
-				minLength: 2,
-				select: function( event, ui ) {
-					$(this).val(ui.item.label);
-					$(this).attr('data-id', ui.item.id);
-					$(this).attr('data-link', ui.item.link);
-				}
-			});
-			
+						});
+					},
+					minLength: 2,
+					select: function( event, ui ) {
+						$(this).val(ui.item.label);
+						$(this).attr('data-id', ui.item.id);
+						$(this).attr('data-link', ui.item.link);
+					}
+				}).data("autocomplete")._renderItem = function (ul, item) {
+					console.log(item);
+					return $("<li />")
+					.data("item.autocomplete", item)
+					.append("<a>" + item.label +  "</a>")
+					.appendTo(ul);
+				};
+			}
 		});
 		
 		
@@ -226,9 +225,7 @@ var controllerurl = location.pathname.replace(/edit$/, '').replace(/edit\/$/, ''
 				open: function(event, ui){
 					// hide title field for wiki editor as it is not supported
 					if(editorType == 'wiki'){
-						$('#dialogContent #Title').livequery(function(){
-							$(this).hide();	
-						});
+						$('#dialogContent #Title').hide();
 					}
 				},
 				buttons: {
@@ -284,32 +281,34 @@ var controllerurl = location.pathname.replace(/edit$/, '').replace(/edit\/$/, ''
 		
 		// autocomplete functionality for link field
 			
-		$( "#Form_LinkPickerForm_Link" ).livequery(function(){
-			if($('#Type input:radio:checked').val() != 'external'){
-				$(this).autocomplete({
-					source: function( request, response ) {
-						$.get(controllerurl + '/linklist', {term : request.term, type : $('#Type input:radio:checked').val()}, function(data){
-							if(data && data.length){
-								var items = [];
-								for (var id = 0; id < data.length; id++){
-									items.push({
-										label : data[id].Label,
-										value : data[id].Title,
-										id : data[id].ID,
-										link : data[id].Link
-									});
+		$( "#Form_LinkPickerForm_Link" ).entwine({
+			onmatch: function () {
+				if($('#Type input:radio:checked').val() != 'external'){
+					$(this).autocomplete({
+						source: function( request, response ) {
+							$.get(controllerurl + '/linklist', {term : request.term, type : $('#Type input:radio:checked').val()}, function(data){
+								if(data && data.length){
+									var items = [];
+									for (var id = 0; id < data.length; id++){
+										items.push({
+											label : data[id].Label,
+											value : data[id].Title,
+											id : data[id].ID,
+											link : data[id].Link
+										});
+									}
+									response(items);
 								}
-								response(items);
-							}
-						});
-					},
-					minLength: 2,
-					select: function( event, ui ) {
-						$(this).val(ui.item.label);
-						$(this).attr('data-id', ui.item.id);
-						$(this).attr('data-link', ui.item.link);
-					}
-				});
+							});
+						},
+						minLength: 2,
+						select: function( event, ui ) {
+							$(this).val(ui.item.label);
+							$(this).attr('data-id', ui.item.id);
+							$(this).attr('data-link', ui.item.link);
+						}
+					});
+				}
 			}
 		});
 		

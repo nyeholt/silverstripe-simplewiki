@@ -13,7 +13,7 @@
  */
 class WikiPage extends Page {
 
-	public static $db = array(
+	private static $db = array(
 		'EditorType'		=> "Varchar(32)",
 		// Who was the last editor of the page?
 		'WikiLastEditor'	=> 'Varchar(64)',
@@ -26,7 +26,8 @@ class WikiPage extends Page {
 	 *
 	 * @var int
 	 */
-	public static $lock_time = 60;
+	private static $lock_time = 60;
+	
 	/**
 	 * Set this to true in your mysite/_config.php file to force publishing
 	 * as soon as you hit save. Removes the potentially awkward step of
@@ -244,7 +245,7 @@ class WikiPage extends Page {
 
 		// set the updated lock expiry based on now + lock timeout
 		$this->WikiLastEditor = $member->Email;
-		$this->WikiLockExpiry = date('Y-m-d H:i:s', time() + WikiPage::$lock_time);
+		$this->WikiLockExpiry = date('Y-m-d H:i:s', time() + $this->config()->get('lock_time'));
 
 		// save it with us as the editor
 		$this->write();
@@ -256,7 +257,7 @@ class WikiPage extends Page {
 	 */
 	public function LinkPickerForm()
 	{
-		$fields = new FieldSet(
+		$fields = FieldList::create(
 			new OptionsetField(
 		    	$name = "Type",
 		    	$title = "Link to a",
@@ -272,7 +273,7 @@ class WikiPage extends Page {
 			
 		);
 		
-		$actions = new FieldSet(
+		$actions = FieldList::create(
             //new FormAction('Submit', 'Submit')
         );
         
@@ -285,7 +286,7 @@ class WikiPage extends Page {
 	 */
 	public function ImagePickerForm()
 	{
-		$fields = new FieldSet(
+		$fields = FieldList::create(
 			new OptionsetField(
 		    	$name = "Type",
 		    	$title = "Image source",
@@ -303,7 +304,7 @@ class WikiPage extends Page {
 		
 		$ff->getValidator()->setAllowedMaxFileSize(3145728); // 3mb
 		
-		$actions = new FieldSet(
+		$actions = FieldList::create(
             //new FormAction('Submit', 'Submit')
         );
         
@@ -314,7 +315,7 @@ class WikiPage extends Page {
 
 class WikiPage_Controller extends Page_Controller implements PermissionProvider {
 
-	static $allowed_actions = array(
+	private static $allowed_actions = array(
 		'linkselector',
 		'edit',
 		'StatusForm',
@@ -341,6 +342,7 @@ class WikiPage_Controller extends Page_Controller implements PermissionProvider 
 	public function init() {
 		parent::init();
 		Requirements::javascript(THIRDPARTY_DIR . '/jquery/jquery.js');
+		Requirements::javascript(THIRDPARTY_DIR . '/jquery-entwine/dist/jquery.entwine-dist.js');
 		Requirements::javascript('simplewiki/javascript/simplewiki.js');
 		Requirements::css('simplewiki/css/simplewiki.css');
 	}
@@ -388,8 +390,7 @@ class WikiPage_Controller extends Page_Controller implements PermissionProvider 
 		$existing = $this->getEditingLocks($this->owner, true);
 		// oops, we've somehow got here even though we shouldn't have
 		if ($existing && $existing['user'] != Member::currentUser()->Email) {
-			Director::redirect($this->owner->Link());
-			return;
+			return $this->redirect($this->owner->Link());
 		}
 
 		if (!$this->owner->canEdit()) {
@@ -416,13 +417,13 @@ class WikiPage_Controller extends Page_Controller implements PermissionProvider 
 		$helpLink = $formatter->getHelpUrl();
 
 
-		$fields = new FieldSet(
+		$fields = FieldList::create(
 						new LiteralField('Preview', '<div data-url="'.$this->Link('livepreview').'" id="editorPreview"></div>'),
 						new LiteralField('DialogContent', '<div id="dialogContent" style="display:none;"></div>'),
 						$editorField,
 						new DropdownField('EditorType', _t('WikiPage.EDITORTYPE', 'Editor Type'), $this->data()->getEditorTypeOptions()),
 						new HiddenField('LockUpdate', '', $this->owner->Link('updatelock')),
-						new HiddenField('LockLength', '', WikiPage::$lock_time - 10)
+						new HiddenField('LockLength', '', $this->config()->get('lock_time') - 10)
 		);
 		
 
@@ -432,13 +433,13 @@ class WikiPage_Controller extends Page_Controller implements PermissionProvider 
 
 		$actions = null;
 		if (!WikiPage::$auto_publish) {
-			$actions = new FieldSet(
+			$actions = FieldList::create(
 							new FormAction('save', _t('WikiPage.SAVE', 'Save')),
 							new FormAction('done', _t('WikiPage.DONE', 'Done (Draft)')),
 							new FormAction('publish', _t('WikiPage.PUBLISH', 'Publish'))
 			);
 		} else {
-			$actions = new FieldSet(
+			$actions = FieldList::create(
 							new FormAction('save', _t('WikiPage.SAVE', 'Save')),
 							new FormAction('publish', _t('WikiPage.FINISHED', 'Finished'))
 			);
@@ -472,13 +473,13 @@ class WikiPage_Controller extends Page_Controller implements PermissionProvider 
 		$pageTree = new TreeDropdownField('CreateContext', _t('WikiPage.CREATE_CONTEXT', 'Select an existing page'), 'WikiPage');
 		$pageTree->setValue($this->ID);
 		$pageTree->setTreeBaseID($this->data()->getWikiRoot()->ID);
-		$fields = new FieldSet(
+		$fields = FieldList::create(
 						new TextField('NewPageName', _t('WikiPage.NEW_PAGE_NAME', 'New Page Name')),
 						$pageTree,
 						new OptionsetField('CreateType', _t('WikiPage.CREATE_OPTIONS', 'and create the new page '), $createOptions, 'child')
 		);
 
-		$actions = new FieldSet(new FormAction('addpage', _t('WikiPage.ADD_PAGE', 'Create')));
+		$actions = FieldList::create(new FormAction('addpage', _t('WikiPage.ADD_PAGE', 'Create')));
 
 		return new Form($this, 'CreatePageForm', $fields, $actions);
 	}
@@ -488,7 +489,7 @@ class WikiPage_Controller extends Page_Controller implements PermissionProvider 
 	 * 
 	 */
 	public function cancel() {
-		Director::redirect($this->owner->Link() . '?stage=Stage');
+		return $this->redirect($this->owner->Link() . '?stage=Stage');
 	}
 
 	/**
@@ -498,7 +499,7 @@ class WikiPage_Controller extends Page_Controller implements PermissionProvider 
 		if ($this->owner->IsModifiedOnStage) {
 			$this->owner->doRevertToLive();
 		}
-		Director::redirect($this->owner->Link() . '?stage=Live');
+		return $this->redirect($this->owner->Link() . '?stage=Live');
 	}
 
 	/**
@@ -522,7 +523,7 @@ class WikiPage_Controller extends Page_Controller implements PermissionProvider 
 				$page->deleteFromStage('Stage');
 			}
 
-			Director::redirect($parent->Link());
+			return $this->redirect($parent->Link());
 			return;
 		}
 
@@ -571,14 +572,14 @@ class WikiPage_Controller extends Page_Controller implements PermissionProvider 
 				}
 		}
 
-		$page->write();
+		$page->writeToStage('Stage');
 
 		// publish if we're on autopublish
 		if (WikiPage::$auto_publish) {
 			$page->doPublish();
 		}
 
-		Director::redirect($page->Link('edit') . '?stage=Stage');
+		return $this->redirect($page->Link('edit') . '?stage=Stage');
 	}
 
 	/**
@@ -593,7 +594,7 @@ class WikiPage_Controller extends Page_Controller implements PermissionProvider 
 			$form->saveInto($page);
 		}
 		$page->Status = ($page->Status == "New page" || $page->Status == "Saved (new)") ? "Saved (new)" : "Saved (update)";
-		$page->write($stage);
+		$page->writeToStage($stage);
 	}
 
 	/**
@@ -618,7 +619,7 @@ class WikiPage_Controller extends Page_Controller implements PermissionProvider 
 			$this->owner->doPublish();
 		}
 
-		Director::redirect($this->owner->Link('edit') . '?stage=Stage');
+		return $this->redirect($this->owner->Link('edit') . '?stage=Stage');
 	}
 
 	/**
@@ -634,7 +635,7 @@ class WikiPage_Controller extends Page_Controller implements PermissionProvider 
 		// save stuff then reuse the edit action
 		$this->savePage($this->owner, $form);
 
-		Director::redirect($this->owner->Link() . '?stage=Stage');
+		return $this->redirect($this->owner->Link() . '?stage=Stage');
 	}
 
 	/**
@@ -655,7 +656,7 @@ class WikiPage_Controller extends Page_Controller implements PermissionProvider 
 		Versioned::reading_stage('Live');
 
 		// and go 
-		Director::redirect($this->owner->Link() . '?stage=Live');
+		return $this->redirect($this->owner->Link() . '?stage=Live');
 	}
 
 	/**
@@ -708,13 +709,13 @@ class WikiPage_Controller extends Page_Controller implements PermissionProvider 
 		$existing = $this->getEditingLocks($this->owner);
 
 		if ($existing && $existing['user'] != Member::currentUser()->Email) {
-			$fields = new FieldSet(
+			$fields = FieldList::create(
 							new ReadonlyField('ExistingEditor', '', _t('WikiPage.EXISTINGEDITOR', 'This page is currently locked for editing by ' . $existing['user'] . ' until ' . $existing['expires']))
 			);
-			$actions = new FieldSet();
+			$actions = FieldList::create();
 		} else {
-			$fields = new FieldSet();
-			$actions = new FieldSet(
+			$fields = FieldList::create();
+			$actions = FieldList::create(
 							new FormAction('startediting', _t('WikiPage.STARTEDIT', 'Edit Page'))
 			);
 		}
@@ -757,14 +758,12 @@ class WikiPage_Controller extends Page_Controller implements PermissionProvider 
 		Versioned::reading_stage('Stage');
 
 		$filter = array(
-			'WikiPage.ID =' => $page->ID,
-			'WikiLockExpiry > ' => date('Y-m-d H:i:s'),
+			'WikiPage.ID' => $page->ID,
+			'WikiLockExpiry' => date('Y-m-d H:i:s'),
 		);
 
-		$filter = singleton('SimpleWikiUtils')->quote($filter);
-
 		$user = Member::currentUser();
-		$currentLock = DataObject::get_one('WikiPage', $filter);
+		$currentLock = WikiPage::get()->filter($filter)->first();
 
 		$lock = null;
 
@@ -792,7 +791,7 @@ class WikiPage_Controller extends Page_Controller implements PermissionProvider 
 	 * 
 	 */
 	public function startediting() {
-		Director::redirect($this->owner->Link('edit') . '?stage=Stage');
+		return $this->redirect($this->owner->Link('edit') . '?stage=Stage');
 	}
 
 	/**
@@ -819,16 +818,16 @@ class WikiPage_Controller extends Page_Controller implements PermissionProvider 
 	public function LinkSelectForm() {
 		$type = isset($_GET['type']) ? $_GET['type'] : 'href';
 
-		$fields = new FieldSet(
-						new TreeDropdownField('TargetPage', _t('WikiPage.TARGETPAGE', 'Select Page'), 'SiteTree'),
-						new TreeDropdownField('TargetFile', _t('WikiPage.TARGETIMAGE', 'Select Image'), 'File')
+		$fields = FieldList::create(
+			new TreeDropdownField('TargetPage', _t('WikiPage.TARGETPAGE', 'Select Page'), 'SiteTree'),
+			new TreeDropdownField('TargetFile', _t('WikiPage.TARGETIMAGE', 'Select Image'), 'File')
 		);
 
-		$actions = new FieldSet(
-						new FormAction('insert', _t('WikiPage.INSERTLINK', 'Insert'))
+		$actions = FieldList::create(
+			new FormAction('insert', _t('WikiPage.INSERTLINK', 'Insert'))
 		);
 
-		return new Form($this, 'LinkSelectForm', $fields, $actions);
+		return Form::create($this, 'LinkSelectForm', $fields, $actions);
 	}
 
 	/**

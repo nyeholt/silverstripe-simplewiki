@@ -76,8 +76,7 @@ class WikiPageTest extends SapphireTest
 		$expiry = strtotime($page->WikiLockExpiry);
 
 		// the lock should be at least minDiff in the future
-		$minDiff = WikiPage::$lock_time - 5;
-
+		$minDiff = Config::inst()->get('WikiPage', 'lock_time') - 5;
 		$this->assertTrue($expiry - $now > $minDiff);
 
 	}
