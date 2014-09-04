@@ -62,7 +62,7 @@ class MarkItUpField extends TextareaField
 		$attributes = array (
 				'class'   => $this->extraClass(),
 				'rows'    => $this->rows,
-				'style'   => 'width: 90%; height: ' . ($this->rows * 16) . 'px', // prevents horizontal scrollbars
+				'style'   => 'width: 90%; ', // prevents horizontal scrollbars
 				'id'      => $this->id(),
 				'name'    => $this->name
 			);

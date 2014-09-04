@@ -25,12 +25,16 @@ class MarkdownFormatter extends SimpleWikiFormatter {
 	}
 
 	public function formatRaw($string) {
-		include_once SIMPLEWIKI_DIR . '/thirdparty/php-markdown-extra-1.2.4/markdown.php';
+		include_once SIMPLEWIKI_DIR .'/thirdparty/parsedown-0.9.0/Parsedown.php';
+		$parsedown = new Parsedown();
+		return $parsedown->parse($string);
+		
+//		include_once SIMPLEWIKI_DIR . '/thirdparty/php-markdown-extra-1.2.4/markdown.php';
 		return Markdown($string);
 	}
 
 	public function getHelpUrl() {
-		return 'http://michelf.com/projects/php-markdown/extra/';
+		return 'http://parsedown.org/';
 	}
 
 }

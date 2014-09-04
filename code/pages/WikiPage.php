@@ -344,6 +344,7 @@ class WikiPage_Controller extends Page_Controller implements PermissionProvider 
 		Requirements::javascript(THIRDPARTY_DIR . '/jquery/jquery.js');
 		Requirements::javascript(THIRDPARTY_DIR . '/jquery-entwine/dist/jquery.entwine-dist.js');
 		Requirements::javascript('simplewiki/javascript/simplewiki.js');
+		Requirements::javascript('simplewiki/javascript/jquery-autogrow-textarea.js');
 		Requirements::css('simplewiki/css/simplewiki.css');
 	}
 

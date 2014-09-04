@@ -50,6 +50,8 @@ var controllerurl = location.pathname.replace(/edit$/, '').replace(/edit\/$/, ''
 		updateFlag = false;
 		
 		var t = setInterval(updatePreview,5000);
+		
+		$('#Form_EditForm_Content').autogrow();
 			
 		$('#Form_EditForm_Content').keyup(function(){
 			updateFlag = true;		
