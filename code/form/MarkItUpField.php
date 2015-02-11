@@ -45,12 +45,8 @@ class MarkItUpField extends TextareaField
 	 * @see TextareaField::__construct()
 	 */
 	public function __construct($name, $title = null, $type = 'wiki', $rows = 30, $cols = 20, $value = '', $form = null) {
-		parent::__construct($name, $title, $value);
+		parent::__construct($name, $title, $rows, $cols, $value, $form);
 		$this->markupType = $type;
-		$this->setRows($rows)->setColumns($cols);
-		if ($form){
-			$this->setForm($form);
-		}
 		self::include_js($type);
 	}
 
