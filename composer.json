@@ -1,0 +1,23 @@
+{
+	"name": "nyeholt/silverstripe-simplewiki",
+	"description": "A silverstripe module that provides simple wiki-style editing capabilities for pages in your site.",
+	"type": "silverstripe-module",
+	"keywords": [
+		"silverstripe",
+		"wiki",
+		"intranet"
+	],
+	"homepage": "https://github.com/nyeholt/silverstripe-simplewiki",
+	"license": "BSD-3-Clause",
+	"authors": [{
+		"name": "Marcus Nyeholt",
+		"email": "marcus@silverstripe.com.au"
+	}],
+	"require": {
+		"silverstripe/cms": "3.1.*",
+		"silverstripe/framework": "3.1.*"
+	},
+	"extra": {
+		"installer-name": "simplewiki"
+	}
+}
