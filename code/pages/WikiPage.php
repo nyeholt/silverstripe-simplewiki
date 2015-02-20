@@ -954,12 +954,19 @@ class WikiPage_Controller extends Page_Controller implements PermissionProvider 
 	 * handles the upload of an image via ajax in the insert image dialog
 	 */
 	public function imageupload(){
-		if($tempfile = $_FILES['NewImage']){
-			
+		if (!Member::currentUserID()) {
+			$return = array(
+				'error' => 1,
+				'text' => "Cannot upload there"
+			);
+			return Convert::raw2json($return);
+		}
+		if(isset($_FILES['NewImage']) && $tempfile = $_FILES['NewImage']){
 			// validate //
 			
 			$allowed = array('jpg', 'jpeg', 'gif', 'png', 'ico');
-			$ext = end(explode('.', $tempfile['name']));
+			$nameBits = explode('.', $tempfile['name']);
+			$ext = end($nameBits);
 			if(!in_array(strtolower($ext), $allowed)){
 				$return = array(
 					'error' => 1,

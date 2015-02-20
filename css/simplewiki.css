@@ -274,7 +274,17 @@ form .Actions { margin-top: 10px; }
 }
 
 #editorPreview{
-	height: 300px;
 	overflow: auto;
 	border: 1px solid #DDD;
+	float: right; 
+	width: 40%;
+}
+
+#Form_EditForm #Content {
+	width: 58%;
+	margin-right: 42%;
+}
+
+#Form_EditForm #Content .markItUpEditor {
+	clear: none;
 }

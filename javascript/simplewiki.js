@@ -58,15 +58,7 @@ var controllerurl = location.pathname.replace(/edit$/, '').replace(/edit\/$/, ''
 		});
 		
 		if($('.markitup').length > 0){
-			previewdiv.hide();
-			previewdiv.after('<div id="showPreview"><a href="#">show / hide preview</a></div>');
 			updatePreview();
-			
-			$('#showPreview a').click(function(){
-				previewdiv.toggle();
-				$('#Form_EditForm_Content').focus();
-				return false;
-			});
 		}
 		
 		function updatePreview(){
