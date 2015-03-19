@@ -1,6 +1,6 @@
 <form $FormAttributes>
 	$dataFieldByName(TargetPage)
    	<% if Actions %>
-    <% control Actions %>$Field<% end_control %>
+    <% loop Actions %>$Field<% end_loop %>
    	<% end_if %>
 </form>
