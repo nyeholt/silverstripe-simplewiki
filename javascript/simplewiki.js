@@ -7,12 +7,14 @@ var controllerurl = location.pathname.replace(/edit$/, '').replace(/edit\/$/, ''
 		$('#Form_StatusForm_action_startediting').attr('accesskey', 's');
 
 		// add the lock update ping
-		var timeout = $('#Form_EditForm_LockLength').val() > 5 ? $('#Form_EditForm_LockLength').val() * 1000 : 300000;
+		var timeout = $('#Form_EditForm_LockLength').length > 0 && $('#Form_EditForm_LockLength').val() > 5 ? $('#Form_EditForm_LockLength').val() * 1000 : 300000;
 
 		if (timeout) {
 			setInterval(function () {
 				var url = $('#Form_EditForm_LockUpdate').val();
-				$.post(url);
+				if (url && url.length) {
+					$.post(url);
+				}
 			}, timeout);
 		}
 
@@ -63,18 +65,22 @@ var controllerurl = location.pathname.replace(/edit$/, '').replace(/edit\/$/, ''
 		
 		function updatePreview(){
 			if(updateFlag){
-				$.post(
-					previewdiv.attr('data-url'), 
-					{ content: $('#Form_EditForm_Content').val() },
-					function(data){
-						if(data){
-							if(previewdiv.html() != data){
-								previewdiv.html(data);
-								updateFlag = false;
-							}
-						}		
-					}
-				);
+				var previewUrl = previewdiv.attr('data-url');
+				if (previewUrl && previewUrl.length > 0) {
+					$.post(
+						previewUrl, 
+						{ content: $('#Form_EditForm_Content').val() },
+						function(data){
+							if(data){
+								if(previewdiv.html() != data){
+									previewdiv.html(data);
+									updateFlag = false;
+								}
+							}		
+						}
+					);
+				}
+				
 			}
 		}
 		// image dialog window
