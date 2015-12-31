@@ -8,20 +8,24 @@
  */
 class PlainFormatter extends SimpleWikiFormatter
 {
-	public function getFormatterName() {
-		return "Plain";
-	}
+    public function getFormatterName()
+    {
+        return "Plain";
+    }
 
-	public function getEditingField(DataObject $wikiPage) {
-		return new TextareaField('Content', '', 30, 20);
-	}
+    public function getEditingField(DataObject $wikiPage)
+    {
+        return new TextareaField('Content', '', 30, 20);
+    }
 
 
-	public function formatRaw($string) {
-		return $string;
-	}
+    public function formatRaw($string)
+    {
+        return $string;
+    }
 
-	public function getHelpUrl() {
-		return null;
-	}
+    public function getHelpUrl()
+    {
+        return null;
+    }
 }
