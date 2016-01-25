@@ -23,93 +23,94 @@ OF SUCH DAMAGE.
 
 class WikiPageTest extends SapphireTest
 {
-	public static $fixture_file = 'simplewiki/tests/WikiPageTest.yml';
-	
-	function testParseNewPages()
-	{
-		$wp = new DummyWikiFormatter();
-		
-		$content = 'page content [[with a mix]] of good urls';
-		$newPages = $wp->parseNewPagesFrom($content);
-		$this->assertEquals('with a mix', $newPages[0]);
-		
-		// check to make sure that other malformed entries fail
-		$content = 'page with [[a malformed url?]] here, and [[ something [ ]] else';
-		$newPages = $wp->parseNewPagesFrom($content);
-		$this->assertEquals(0, count($newPages)); 
-	}
-	
-	function testCreateNewPage()
-	{
-		$page = $this->objFromFixture('WikiPage', 'wiki2');
-		
-		$page->Content = 'page content [[with a mix]] of good urls';
-		// save and make sure there's a page with the title 'with a mix'
-		$page->write();
+    public static $fixture_file = 'simplewiki/tests/WikiPageTest.yml';
+    
+    public function testParseNewPages()
+    {
+        $wp = new DummyWikiFormatter();
+        
+        $content = 'page content [[with a mix]] of good urls';
+        $newPages = $wp->parseNewPagesFrom($content);
+        $this->assertEquals('with a mix', $newPages[0]);
+        
+        // check to make sure that other malformed entries fail
+        $content = 'page with [[a malformed url?]] here, and [[ something [ ]] else';
+        $newPages = $wp->parseNewPagesFrom($content);
+        $this->assertEquals(0, count($newPages));
+    }
+    
+    public function testCreateNewPage()
+    {
+        $page = $this->objFromFixture('WikiPage', 'wiki2');
+        
+        $page->Content = 'page content [[with a mix]] of good urls';
+        // save and make sure there's a page with the title 'with a mix'
+        $page->write();
 
-		$children = $page->Children();
-		
-		$this->assertEquals(1, count($children));
-		$this->assertEquals('with a mix', $children->First()->Title);
-	}
+        $children = $page->Children();
+        
+        $this->assertEquals(1, count($children));
+        $this->assertEquals('with a mix', $children->First()->Title);
+    }
 
-	function testGetWikiRoot()
-	{
-		// get the root page of the wiki
-		$page = $this->objFromFixture('WikiPage', 'wiki4');
-		$root = $page->getWikiRoot();
+    public function testGetWikiRoot()
+    {
+        // get the root page of the wiki
+        $page = $this->objFromFixture('WikiPage', 'wiki4');
+        $root = $page->getWikiRoot();
 
-		$this->assertEquals('Wiki', $root->Title);
-	}
+        $this->assertEquals('Wiki', $root->Title);
+    }
 
-	function testLockTimeout()
-	{
-		$page = $this->objFromFixture('WikiPage', 'wiki2');
+    public function testLockTimeout()
+    {
+        $page = $this->objFromFixture('WikiPage', 'wiki2');
 
-		$page->Content = 'page content [[with a mix]] of good urls';
-		// save and make sure there's a page with the title 'with a mix'
-		$page->write();
+        $page->Content = 'page content [[with a mix]] of good urls';
+        // save and make sure there's a page with the title 'with a mix'
+        $page->write();
 
-		// now lock the page, we expect the 'lockExpiry' to be in the future
-		$now = time();
-		$page->lock();
-		$expiry = strtotime($page->WikiLockExpiry);
+        // now lock the page, we expect the 'lockExpiry' to be in the future
+        $now = time();
+        $page->lock();
+        $expiry = strtotime($page->WikiLockExpiry);
 
-		// the lock should be at least minDiff in the future
-		$minDiff = Config::inst()->get('WikiPage', 'lock_time') - 5;
-		$this->assertTrue($expiry - $now > $minDiff);
-
-	}
+        // the lock should be at least minDiff in the future
+        $minDiff = Config::inst()->get('WikiPage', 'lock_time') - 5;
+        $this->assertTrue($expiry - $now > $minDiff);
+    }
 }
 
-class DummyWikiFormatter extends SimpleWikiFormatter {
-	public function getFormatterName(){
-		return "Dummy";
-	}
+class DummyWikiFormatter extends SimpleWikiFormatter
+{
+    public function getFormatterName()
+    {
+        return "Dummy";
+    }
 
-	/**
-	 * Get the CMS field for editing this kind of element
-	 * @param DataObject $wikiPage
-	 * 			The page being edited
-	 */
-	public function getEditingField(DataObject $wikiPage){
-	
-	}
+    /**
+     * Get the CMS field for editing this kind of element
+     * @param DataObject $wikiPage
+     * 			The page being edited
+     */
+    public function getEditingField(DataObject $wikiPage)
+    {
+    }
 
-	/**
-	 * Format the content for output
-	 *
-	 * @param DataObject $wikiPage
-	 * 			The page being edited
-	 */
-	public function formatRaw($string){
-	
-	}
+    /**
+     * Format the content for output
+     *
+     * @param DataObject $wikiPage
+     * 			The page being edited
+     */
+    public function formatRaw($string)
+    {
+    }
 
-	/**
-	 * Get a URL that links to a page showing relevant help functionality
-	 */
-	public function getHelpUrl() {
-	
-	}
+    /**
+     * Get a URL that links to a page showing relevant help functionality
+     */
+    public function getHelpUrl()
+    {
+    }
 }
