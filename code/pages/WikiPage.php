@@ -388,13 +388,13 @@ class WikiPage_Controller extends Page_Controller implements PermissionProvider 
 		HtmlEditorField::include_js();
 //		Requirements::javascript('simplewiki/javascript/sslinks/editor_plugin_src.js');
 
-		$existing = $this->getEditingLocks($this->owner, true);
+		$existing = $this->getEditingLocks($this->data(), true);
 		// oops, we've somehow got here even though we shouldn't have
 		if ($existing && $existing['user'] != Member::currentUser()->Email) {
-			return $this->redirect($this->owner->Link());
+			return $this->redirect($this->data()->Link());
 		}
 
-		if (!$this->owner->canEdit()) {
+		if (!$this->data()->canEdit()) {
 			return Security::permissionFailure($this);
 		}
 
@@ -423,7 +423,7 @@ class WikiPage_Controller extends Page_Controller implements PermissionProvider 
 						new LiteralField('DialogContent', '<div id="dialogContent" style="display:none;"></div>'),
 						$editorField,
 						new DropdownField('EditorType', _t('WikiPage.EDITORTYPE', 'Editor Type'), $this->data()->getEditorTypeOptions()),
-						new HiddenField('LockUpdate', '', $this->owner->Link('updatelock')),
+						new HiddenField('LockUpdate', '', $this->data()->Link('updatelock')),
 						new HiddenField('LockLength', '', $this->config()->get('lock_time') - 10)
 		);
 		
@@ -492,17 +492,17 @@ class WikiPage_Controller extends Page_Controller implements PermissionProvider 
 	 * 
 	 */
 	public function cancel() {
-		return $this->redirect($this->owner->Link() . '?stage=Stage');
+		return $this->redirect($this->data()->Link() . '?stage=Stage');
 	}
 
 	/**
 	 * Option for the user to revert the changes made since it was last published
 	 */
 	public function revert() {
-		if ($this->owner->IsModifiedOnStage) {
-			$this->owner->doRevertToLive();
+		if ($this->data()->IsModifiedOnStage) {
+			$this->data()->doRevertToLive();
 		}
-		return $this->redirect($this->owner->Link() . '?stage=Live');
+		return $this->redirect($this->data()->Link() . '?stage=Live');
 	}
 
 	/**
@@ -511,7 +511,7 @@ class WikiPage_Controller extends Page_Controller implements PermissionProvider 
 	 *
 	 */
 	public function delete() {
-		$page = $this->owner;
+		$page = $this->data();
 		/* @var $page Page */
 		if ($page) {
 			$parent = $page->Parent();
@@ -548,7 +548,7 @@ class WikiPage_Controller extends Page_Controller implements PermissionProvider 
 			throw new Exception("Invalid page name");
 		}
 
-		$createContext = $this->owner;
+		$createContext = $this->data();
 
 		if ($args['CreateContext']) {
 			$createContext = DataObject::get_by_id('WikiPage', $args['CreateContext']);
@@ -606,23 +606,23 @@ class WikiPage_Controller extends Page_Controller implements PermissionProvider 
 	 * @return 
 	 */
 	public function save($data, $form) {
-		if (!$this->owner->canEdit()) {
+		if (!$this->data()->canEdit()) {
 			return Security::permissionFailure($this);
 		}
 
-		$existing = $this->getEditingLocks($this->owner, true);
+		$existing = $this->getEditingLocks($this->data(), true);
 		// oops, we've somehow got here even though we shouldn't have
 		if ($existing && $existing['user'] != Member::currentUser()->Email) {
 			return "Someone somehow locked it while you were gone, this shouldn't happen like this :(";
 		}
 
-		$this->savePage($this->owner, $form);
+		$this->savePage($this->data(), $form);
 		if (WikiPage::$auto_publish) {
 			// do publish
-			$this->owner->doPublish();
+			$this->data()->doPublish();
 		}
 
-		return $this->redirect($this->owner->Link('edit') . '?stage=Stage');
+		return $this->redirect($this->data()->Link('edit') . '?stage=Stage');
 	}
 
 	/**
@@ -632,13 +632,13 @@ class WikiPage_Controller extends Page_Controller implements PermissionProvider 
 	 * @param Form $form
 	 */
 	public function done($data, $form) {
-		if (!$this->owner->canEdit()) {
+		if (!$this->data()->canEdit()) {
 			return Security::permissionFailure($this);
 		}
 		// save stuff then reuse the edit action
-		$this->savePage($this->owner, $form);
+		$this->savePage($this->data(), $form);
 
-		return $this->redirect($this->owner->Link() . '?stage=Stage');
+		return $this->redirect($this->data()->Link() . '?stage=Stage');
 	}
 
 	/**
@@ -648,18 +648,18 @@ class WikiPage_Controller extends Page_Controller implements PermissionProvider 
 	 * @param Form $form
 	 */
 	public function publish($data, $form) {
-		if (!$this->owner->canEdit()) {
+		if (!$this->data()->canEdit()) {
 			return Security::permissionFailure($this);
 		}
 		// save stuff then reuse the edit action
-		$this->savePage($this->owner, $form);
-		$this->owner->doPublish();
+		$this->savePage($this->data(), $form);
+		$this->data()->doPublish();
 
 		// Make sure we're on the live content now
 		Versioned::reading_stage('Live');
 
 		// and go 
-		return $this->redirect($this->owner->Link() . '?stage=Live');
+		return $this->redirect($this->data()->Link() . '?stage=Live');
 	}
 
 	/**
@@ -673,7 +673,7 @@ class WikiPage_Controller extends Page_Controller implements PermissionProvider 
 			return '';
 		}
 
-		return $this->owner->ParsedContent(); //XML_val('Content');
+		return $this->data()->ParsedContent(); //XML_val('Content');
 	}
 
 	/**
@@ -687,7 +687,7 @@ class WikiPage_Controller extends Page_Controller implements PermissionProvider 
 		// so lets just show the status form
 		$append = '';
 		if (!$this->form) {
-			if (WikiPage::$show_edit_button || $this->owner->canEdit()) {
+			if (WikiPage::$show_edit_button || $this->data()->canEdit()) {
 				// create the information form 
 				$this->form = $this->StatusForm();
 			}
@@ -709,7 +709,7 @@ class WikiPage_Controller extends Page_Controller implements PermissionProvider 
 	 * @return Form
 	 */
 	public function StatusForm() {
-		$existing = $this->getEditingLocks($this->owner);
+		$existing = $this->getEditingLocks($this->data());
 
 		if ($existing && $existing['user'] != Member::currentUser()->Email) {
 			$fields = FieldList::create(
@@ -732,8 +732,8 @@ class WikiPage_Controller extends Page_Controller implements PermissionProvider 
 	 * @param <type> $data
 	 */
 	public function updatelock($data) {
-		if ($this->owner->ID && $this->owner->canEdit()) {
-			$lock = $this->getEditingLocks($this->owner, true);
+		if ($this->data()->ID && $this->data()->canEdit()) {
+			$lock = $this->getEditingLocks($this->data(), true);
 			$response = new stdClass();
 			$response->status = 1;
 			if ($lock != null && $lock['user'] != Member::currentUser()->Email) {
@@ -794,7 +794,7 @@ class WikiPage_Controller extends Page_Controller implements PermissionProvider 
 	 * 
 	 */
 	public function startediting() {
-		return $this->redirect($this->owner->Link('edit') . '?stage=Stage');
+		return $this->redirect($this->data()->Link('edit') . '?stage=Stage');
 	}
 
 	/**
