@@ -21,7 +21,7 @@ class MarkdownFormatter extends SimpleWikiFormatter {
 	 * @return MarkItUpField
 	 */
 	public function getEditingField(DataObject $wikiPage) {
-		return new MarkItUpField('Content', '', 'markdown', 30, 20);
+		return MarkItUpField::create('Content', '', 'markdown', 30, 20);
 	}
 
 	public function formatRaw($string) {

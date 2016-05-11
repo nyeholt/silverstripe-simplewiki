@@ -9,11 +9,13 @@
 class MarkItUpField extends TextareaField
 {
 	protected $markupType = 'wiki';
+    
+    protected $includeCallback;
 	
 	/**
 	 * Includes the JavaScript neccesary for this field to work using the {@link Requirements} system.
 	 */
-	public static function include_js($type) {
+	public static function include_js($type, $callback = null) {
 		Requirements::javascript(THIRDPARTY_DIR.'/jquery/jquery.js');
 		Requirements::javascript(THIRDPARTY_DIR.'/jquery-ui/jquery-ui.js');
 		Requirements::javascript(THIRDPARTY_DIR .'/jquery-livequery/jquery.livequery.js');
@@ -22,22 +24,25 @@ class MarkItUpField extends TextareaField
 		
 		Requirements::javascript('simplewiki/javascript/markitup/jquery.markitup.js');
 
-		Requirements::css('simplewiki/javascript/markitup/skins/markitup/style.css', 'all');
-
-		switch ($type) {
-			case 'wiki': {
-				Requirements::javascript('simplewiki/javascript/markitup/sets/wiki/set.js');
-				Requirements::css('simplewiki/javascript/markitup/sets/wiki/style.css');
-				break;
-			}
-			case 'markdown': {
-				Requirements::javascript('simplewiki/javascript/markitup/sets/markdown/set.js');
-				Requirements::css('simplewiki/javascript/markitup/sets/markdown/style.css');
-				break;
-			}
-			default: {
-			}
-		}
+        if ($callback) {
+            $callback($type);
+        } else {
+            Requirements::css('simplewiki/javascript/markitup/skins/markitup/style.css', 'all');
+            switch ($type) {
+                case 'wiki': {
+                    Requirements::javascript('simplewiki/javascript/markitup/sets/wiki/set.js');
+                    Requirements::css('simplewiki/javascript/markitup/sets/wiki/style.css');
+                    break;
+                }
+                case 'markdown': {
+                    Requirements::javascript('simplewiki/javascript/markitup/sets/markdown/set.js');
+                    Requirements::css('simplewiki/javascript/markitup/sets/markdown/style.css');
+                    break;
+                }
+                default: {
+                }
+            }
+        }
 	}
 	
 	
@@ -47,34 +52,30 @@ class MarkItUpField extends TextareaField
 	public function __construct($name, $title = null, $type = 'wiki', $rows = 30, $cols = 20, $value = '', $form = null) {
 		parent::__construct($name, $title, $rows, $cols, $value, $form);
 		$this->markupType = $type;
-		self::include_js($type);
 	}
 
+    public function setIncludeCallback($callback) {
+        $this->includeCallback = $callback;
+        return $this;
+    }
+    
+    /**
+	 * @return string
+	 */
+	public function Value() {
+		return str_replace('&amp;#13;', '', htmlentities($this->value, ENT_COMPAT, 'UTF-8'));
+	}
+    
 	/**
 	 * @return string
 	 */
 	function Field($properties = array()) {
+        self::include_js($this->markupType, $this->includeCallback);
+        
 		$settings = ucfirst($this->markupType);
 		// add JS
 		Requirements::customScript('jQuery().ready(function () { jQuery("#'.$this->id().'").markItUp(my'.$settings.'Settings)});');
 
-		
-		$attributes = array (
-				'class'   => $this->extraClass(),
-				'rows'    => $this->rows,
-				'id'      => $this->id(),
-				'name'    => $this->name
-			);
-
-		if ($this->readonly) {
-			$attributes['readonly'] = 'readonly';
-		}
-
-		$val = str_replace('&amp;#13;', '', htmlentities($this->value, ENT_COMPAT, 'UTF-8'));
-		return $this->createTag (
-			'textarea',
-			$attributes,
-			$val
-		);
+        return parent::Field($properties);
 	}
 }

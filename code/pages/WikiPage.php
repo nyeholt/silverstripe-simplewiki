@@ -456,6 +456,8 @@ class WikiPage_Controller extends Page_Controller implements PermissionProvider 
 
 		$form = new Form($this, "EditForm", $fields, $actions);
 		$form->loadDataFrom($record);
+        
+        $this->extend('updateWikiEditForm', $form);
 		return $form;
 	}
 

@@ -12,6 +12,7 @@
 	text-decoration:none;
 }
 .markItUp  {
+	width:700px;
 	margin:5px 0 5px 0;
 	border:5px solid #F5F5F5;	
 }
@@ -27,9 +28,8 @@
 	border:3px solid #3C769D;
 	width:643px;
 	height:320px;
-	background-image:url(images/bg-editor.png);
-	background-repeat:no-repeat;
-	clear:both; display:block;
+	background:#FFF url(images/bg-editor.png) no-repeat;
+	clear:both;
 	line-height:18px;
 	overflow:auto;
 }
@@ -54,16 +54,11 @@
 	cursor:n-resize;
 }
 /***************************************************************************************/
-.markItUpHeader ul {
-	margin: 0px;	
-}
-
 /* first row of buttons */
 .markItUpHeader ul li	{
 	list-style:none;
 	float:left;
 	position:relative;
-	margin: 0px;
 }
 .markItUpHeader ul li ul{
 	display:none;
