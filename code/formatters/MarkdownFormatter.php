@@ -25,7 +25,9 @@ class MarkdownFormatter extends SimpleWikiFormatter {
 	}
 
 	public function formatRaw($string) {
-		include_once SIMPLEWIKI_DIR .'/thirdparty/parsedown-0.9.0/Parsedown.php';
+        if (!class_exists('Parsedown')) {
+            include_once SIMPLEWIKI_DIR .'/thirdparty/parsedown-0.9.0/Parsedown.php';
+        }
 		$parsedown = new Parsedown();
 		return $parsedown->parse($string);
 		
