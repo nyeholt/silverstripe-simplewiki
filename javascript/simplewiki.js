@@ -197,8 +197,7 @@ var controllerurl = location.pathname.replace(/edit$/, '').replace(/edit\/$/, ''
 		
 		
 		// update dialog image input field on image type radio button change
-		
-		$('#Form_ImagePickerForm #Type input:radio').live('change', function(){
+		$(document).on('change', '#Form_ImagePickerForm #Type input:radio', function(){
 			type = $(this).val();
 			if(type == 'new'){
 				$('#NewImage').show().next().hide();
@@ -206,11 +205,6 @@ var controllerurl = location.pathname.replace(/edit$/, '').replace(/edit\/$/, ''
 				$('#NewImage').hide().next().show();
 			}	
 		});
-		
-		$('#NewImage').live('change', function(){
-			
-		});
-		
 		
 		// link dialog window
 		
@@ -315,7 +309,7 @@ var controllerurl = location.pathname.replace(/edit$/, '').replace(/edit\/$/, ''
 		
 		// update dialog link input field on link type radio button change
 		
-		$('#Form_LinkPickerForm #Type input:radio').live('change', function(){
+		$(document).on('change', '#Form_LinkPickerForm #Type input:radio', function(){
 			type = $(this).val();
 			label = $('#Link label');
 			input = $('#Link input');
